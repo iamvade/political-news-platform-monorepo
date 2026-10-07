@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Мэдээ",
+    "slug": "news",
+    "scheme": "news",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

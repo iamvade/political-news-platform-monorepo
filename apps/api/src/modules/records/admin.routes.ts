@@ -1,0 +1,90 @@
+import {
+  adminDeclarationListResponseSchema,
+  adminDeclarationResponseSchema,
+  adminPromiseListResponseSchema,
+  adminPromiseResponseSchema,
+  adminStatementListResponseSchema,
+  adminStatementResponseSchema,
+  createDeclarationBodySchema,
+  createPromiseBodySchema,
+  createStatementBodySchema,
+  declarationListQuerySchema,
+  idParamsSchema,
+  promiseListQuerySchema,
+  statementListQuerySchema,
+  updateDeclarationBodySchema,
+  updatePromiseBodySchema,
+  updateStatementBodySchema,
+} from '@news/shared/schemas';
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { paginate } from '../../lib/crud';
+import { deleteResponses, adminErrorResponses as errors, currentUser } from '../../lib/routes';
+import { csrfSecurity } from '../../plugins/swagger';
+import * as service from './service';
+
+/** Protected admin scope: statements, promises, declarations. */
+export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
+  const { db } = app;
+  const dataRoles = app.requireRole('data_editor', 'admin');
+  const adminOnly = app.requireRole('admin');
+
+  // --- Statements ---
+  const statementTags = ['statements'];
+  app.get('/statements', { onRequest: dataRoles, schema: { tags: statementTags, querystring: statementListQuerySchema, response: { 200: adminStatementListResponseSchema, ...errors } } }, async (request) => {
+    const { items, total } = await service.listStatements(db, request.query);
+    return paginate(items, total, request.query.page, request.query.pageSize);
+  });
+  app.get('/statements/:id', { onRequest: dataRoles, schema: { tags: statementTags, params: idParamsSchema, response: { 200: adminStatementResponseSchema, ...errors } } }, async (request) => ({
+    data: await service.getStatement(db, request.params.id),
+  }));
+  app.post('/statements', { onRequest: dataRoles, schema: { tags: statementTags, security: csrfSecurity, body: createStatementBodySchema, response: { 201: adminStatementResponseSchema, ...errors } } }, async (request, reply) =>
+    reply.code(201).send({ data: await service.createStatement(db, currentUser(request), request.body) }),
+  );
+  app.patch('/statements/:id', { onRequest: dataRoles, schema: { tags: statementTags, security: csrfSecurity, params: idParamsSchema, body: updateStatementBodySchema, response: { 200: adminStatementResponseSchema, ...errors } } }, async (request) => ({
+    data: await service.updateStatement(db, currentUser(request), request.params.id, request.body),
+  }));
+  app.delete('/statements/:id', { onRequest: adminOnly, schema: { tags: statementTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
+    await service.deleteStatement(db, currentUser(request), request.params.id);
+    return reply.code(204).send();
+  });
+
+  // --- Promises ---
+  const promiseTags = ['promises'];
+  app.get('/promises', { onRequest: dataRoles, schema: { tags: promiseTags, querystring: promiseListQuerySchema, response: { 200: adminPromiseListResponseSchema, ...errors } } }, async (request) => {
+    const { items, total } = await service.listPromises(db, request.query);
+    return paginate(items, total, request.query.page, request.query.pageSize);
+  });
+  app.get('/promises/:id', { onRequest: dataRoles, schema: { tags: promiseTags, params: idParamsSchema, response: { 200: adminPromiseResponseSchema, ...errors } } }, async (request) => ({
+    data: await service.getPromise(db, request.params.id),
+  }));
+  app.post('/promises', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, body: createPromiseBodySchema, response: { 201: adminPromiseResponseSchema, ...errors } } }, async (request, reply) =>
+    reply.code(201).send({ data: await service.createPromise(db, currentUser(request), request.body) }),
+  );
+  app.patch('/promises/:id', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, params: idParamsSchema, body: updatePromiseBodySchema, response: { 200: adminPromiseResponseSchema, ...errors } } }, async (request) => ({
+    data: await service.updatePromise(db, currentUser(request), request.params.id, request.body),
+  }));
+  app.delete('/promises/:id', { onRequest: adminOnly, schema: { tags: promiseTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
+    await service.deletePromise(db, currentUser(request), request.params.id);
+    return reply.code(204).send();
+  });
+
+  // --- Declarations ---
+  const declarationTags = ['declarations'];
+  app.get('/declarations', { onRequest: dataRoles, schema: { tags: declarationTags, querystring: declarationListQuerySchema, response: { 200: adminDeclarationListResponseSchema, ...errors } } }, async (request) => {
+    const { items, total } = await service.listDeclarations(db, request.query);
+    return paginate(items, total, request.query.page, request.query.pageSize);
+  });
+  app.get('/declarations/:id', { onRequest: dataRoles, schema: { tags: declarationTags, params: idParamsSchema, response: { 200: adminDeclarationResponseSchema, ...errors } } }, async (request) => ({
+    data: await service.getDeclaration(db, request.params.id),
+  }));
+  app.post('/declarations', { onRequest: dataRoles, schema: { tags: declarationTags, security: csrfSecurity, body: createDeclarationBodySchema, response: { 201: adminDeclarationResponseSchema, ...errors } } }, async (request, reply) =>
+    reply.code(201).send({ data: await service.createDeclaration(db, currentUser(request), request.body) }),
+  );
+  app.patch('/declarations/:id', { onRequest: dataRoles, schema: { tags: declarationTags, security: csrfSecurity, params: idParamsSchema, body: updateDeclarationBodySchema, response: { 200: adminDeclarationResponseSchema, ...errors } } }, async (request) => ({
+    data: await service.updateDeclaration(db, currentUser(request), request.params.id, request.body),
+  }));
+  app.delete('/declarations/:id', { onRequest: adminOnly, schema: { tags: declarationTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
+    await service.deleteDeclaration(db, currentUser(request), request.params.id);
+    return reply.code(204).send();
+  });
+};

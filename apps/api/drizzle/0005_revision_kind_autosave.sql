@@ -1,0 +1,1 @@
+ALTER TYPE "public"."revision_kind" ADD VALUE 'autosave';

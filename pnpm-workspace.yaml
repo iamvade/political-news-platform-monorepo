@@ -1,0 +1,19 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+  msgpackr-extract: false
+
+catalog:
+  typescript: 6.0.3
+  zod: ^4.6.5
+  vitest: ^5.0.3
+  "@types/node": ^24.19.1
+
+overrides:
+  # Keep React Native's own tooling on the RN version Expo SDK 57 pins.
+  '@react-native/metro-config': 0.86.3

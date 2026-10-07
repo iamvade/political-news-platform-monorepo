@@ -1,0 +1,25 @@
+{
+  "name": "@news/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas/index.ts",
+    "./api-client": "./src/api-client/index.ts",
+    "./content": "./src/content/index.ts",
+    "./translit": "./src/translit/index.ts",
+    "./policies": "./src/policies/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

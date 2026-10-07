@@ -1,0 +1,28 @@
+{
+  "name": "news",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --stream dev",
+    "build": "pnpm -r build",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm -F @news/api db:generate",
+    "db:migrate": "pnpm -F @news/api db:migrate",
+    "db:seed": "pnpm -F @news/api db:seed",
+    "admin:create": "pnpm -F @news/api admin:create",
+    "storage:init": "pnpm -F @news/api storage:init"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.0.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.71.1"
+  }
+}
