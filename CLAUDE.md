@@ -125,7 +125,7 @@ If a script is missing, add it in the same style. Do not invent alternative scri
 - **Mongolian is the only required locale.** When adding a key, add it to `mn.json` only, unless an `en.json` already exists for that app.
 - **Formatting:** dates and numbers use the `mn-MN` locale through the i18n library, never manual string building.
 - **Fonts and text:** text must render Ө ө Ү ү correctly. Never "simplify" them to О/У.
-- **Admin UI:** primitives are shadcn/ui in `apps/admin/src/components/ui` (owned code; keep their text in `mn.json`). Lists use `DataTable` + `useListParams` + `useListQuery`; menu and route access come from `apps/admin/src/navigation.ts`.
+- **Admin UI:** primitives are shadcn/ui in `apps/admin/src/components/ui` (owned code; keep their text in `mn.json`). Lists use `DataTable` + `useListParams` + `useListQuery`; menu and route access come from `apps/admin/src/navigation.ts`. **Web UI:** build from `apps/web/src/components` and the semantic token utilities (`bg-surface`, `text-ink-muted`, `type-*`), never raw colours; show new components on `/styleguide` (`docs/technical/features/design-system.md`).
 
 ## Testing
 

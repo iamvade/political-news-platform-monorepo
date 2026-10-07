@@ -1,15 +1,27 @@
 import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getTranslations } from 'next-intl/server';
-import { Noto_Sans } from 'next/font/google';
+import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { Inter, Source_Serif_4 } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { SiteFooter } from '@/components/site-footer';
+import { SiteHeader } from '@/components/site-header';
+import { themeScript } from '@/lib/theme';
 import './globals.css';
 
-// cyrillic-ext is required for the Mongolian letters Ө ө Ү ү.
-const notoSans = Noto_Sans({
+// cyrillic-ext carries the Mongolian letters Ө ө Ү ү (verified in the built font files; see docs/technical/features/design-system.md).
+// No `opsz` axis: it almost doubles the serif download. Only the serif (headlines, the likely text LCP) is
+// preloaded (~101 KB); Inter loads when the CSS needs it, leaving early bandwidth to the hero image.
+const serif = Source_Serif_4({
   subsets: ['latin', 'cyrillic', 'cyrillic-ext'],
-  variable: '--font-noto-sans',
+  variable: '--font-source-serif',
   display: 'swap',
+});
+
+const sans = Inter({
+  subsets: ['latin', 'cyrillic', 'cyrillic-ext'],
+  variable: '--font-inter',
+  display: 'swap',
+  preload: false,
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -19,10 +31,20 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
+  const messages = await getMessages();
   return (
-    <html lang={locale} className={notoSans.variable}>
-      <body className="bg-white font-sans text-neutral-900 antialiased">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+    // data-theme is set by the inline script before hydration, hence suppressHydrationWarning.
+    <html lang={locale} className={`${serif.variable} ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="flex min-h-dvh flex-col bg-canvas font-sans text-ink antialiased">
+        {/* Client components only need these namespaces; the rest stays on the server (smaller HTML payload). */}
+        <NextIntlClientProvider messages={{ nav: messages.nav, theme: messages.theme }}>
+          <SiteHeader />
+          <div className="flex-1">{children}</div>
+          <SiteFooter />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

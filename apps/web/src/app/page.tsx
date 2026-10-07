@@ -17,9 +17,9 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-bold">{t('heading')}</h1>
-      <p className="mt-4 text-neutral-600">
+    <main className="mx-auto max-w-page px-gutter py-12">
+      <h1 className="type-display">{t('heading')}</h1>
+      <p className="mt-4 text-ink-muted">
         {t('apiStatus')}: {status}
       </p>
     </main>

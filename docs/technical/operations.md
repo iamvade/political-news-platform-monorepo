@@ -14,7 +14,7 @@ All root scripts delegate to a workspace package. The API package owns the datab
 | `pnpm build` | Builds every package (API → `apps/api/dist/*.mjs` via tsdown) |
 | `pnpm lint` | ESLint (flat config at the root) |
 | `pnpm typecheck` | `tsc --noEmit` in every package (web runs `next typegen` first) |
-| `pnpm test` | Vitest in `packages/shared`, `apps/api` (needs Docker) and `apps/admin` (jsdom) |
+| `pnpm test` | Vitest in `packages/shared`, `apps/api` (needs Docker), `apps/admin` and `apps/web` (jsdom) |
 | `pnpm db:generate` | `drizzle-kit generate` from the schema (`--name=<slug>` recommended) |
 | `pnpm db:migrate` | Applies pending migrations (`apps/api/src/db/migrate.ts`) |
 | `pnpm db:seed [--reset]` | Sample data; refuses if data exists unless `--reset` (which **truncates every table**) |
@@ -102,4 +102,4 @@ Not automated yet; the API refuses to start when the critical items are wrong.
 `package.json`, `pnpm-workspace.yaml`, `apps/api/package.json`, `apps/api/drizzle.config.ts`, `apps/api/src/db/{migrate,migrator,seed,seeder}.ts`, `apps/api/src/cli/{create-admin,storage-init}.ts`.
 
 ---
-Last updated: 2026-10-07 — admin tests in `pnpm test`.
+Last updated: 2026-10-07 — web tests in `pnpm test`.

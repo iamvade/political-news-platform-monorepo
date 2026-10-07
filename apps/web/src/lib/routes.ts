@@ -1,0 +1,22 @@
+/** Public URLs (PRD §7). Latin slug + numeric id where the id is canonical. */
+export const routes = {
+  home: '/',
+  people: '/people',
+  parliament: '/parliament',
+  cabinet: '/cabinet',
+  search: '/search',
+  corrections: '/corrections',
+  reply: '/reply',
+  contact: '/contact',
+  about: '/about',
+  editorialPolicy: '/about/editorial-policy',
+  methodology: '/about/methodology',
+  ownership: '/about/ownership',
+  privacy: '/about/privacy',
+  terms: '/about/terms',
+  article: (article: { id: number; slug: string }) => `/news/${article.id}-${article.slug}`,
+  person: (slug: string) => `/person/${slug}`,
+  party: (slug: string) => `/party/${slug}`,
+  tag: (slug: string) => `/tag/${slug}`,
+  section: (slug: string) => `/section/${slug}`,
+} as const;

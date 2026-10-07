@@ -13,7 +13,7 @@ Mongolian political news platform. It combines articles with living profiles of 
 | [`apps/api`](docs/technical/projects/api.md) | Fastify API + BullMQ workers | Built |
 | [`packages/shared`](docs/technical/projects/shared.md) | Zod contracts, content renderer, translit, typed API client | Built |
 | [`apps/admin`](docs/technical/projects/admin.md) | Newsroom SPA | Built: article editor, political data screens, homepage editor |
-| [`apps/web`](docs/technical/projects/web.md) | Public Next.js site | Scaffold |
+| [`apps/web`](docs/technical/projects/web.md) | Public Next.js site | Design system and `/styleguide`; pages pending |
 | [`apps/mobile`](docs/technical/projects/mobile.md) | Expo app | Scaffold |
 
 ## Stack

@@ -1,5 +1,207 @@
 @import 'tailwindcss';
 
+/*
+ * Design tokens. Components use the semantic utilities below (bg-canvas, text-ink-muted, border-border…),
+ * never raw palette colours, so light/dark is decided here only. Hex values on purpose: the contrast test
+ * (src/design/tokens.test.ts) parses this file and checks WCAG AA for every text pair in both themes.
+ */
+
+/* Light (default) — also for any element with data-theme="light" (styleguide previews). */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --canvas: #fafaf8;
+  --surface: #ffffff;
+  --surface-muted: #f3f2ee;
+  --ink: #18181b;
+  --ink-muted: #44403c;
+  --ink-subtle: #66605b;
+  --border: #e4e2dd;
+  --border-strong: #c9c6bf;
+  --accent: #1f3a5f;
+  --accent-ink: #ffffff;
+  --link: #1d4e89;
+  --focus: #2563eb;
+  --breaking: #b91c1c;
+  --breaking-ink: #ffffff;
+  --notice-bg: #fef7e6;
+  --notice-border: #d97706;
+  --notice-ink: #5b3a00;
+}
+
+/* Dark: the reader's explicit choice, or a nested preview. */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #0f1216;
+  --surface: #161a20;
+  --surface-muted: #1e232b;
+  --ink: #eceae6;
+  --ink-muted: #c2bdb5;
+  --ink-subtle: #9c968e;
+  --border: #2a3038;
+  --border-strong: #3b434e;
+  --accent: #8fb3e6;
+  --accent-ink: #0f1216;
+  --link: #8db8f2;
+  --focus: #60a5fa;
+  --breaking: #b91c1c;
+  --breaking-ink: #ffffff;
+  --notice-bg: #2a2210;
+  --notice-border: #b7791f;
+  --notice-ink: #f6e3b4;
+}
+
+/* Dark: following the phone setting unless the reader picked light (keep in sync with the block above). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --canvas: #0f1216;
+    --surface: #161a20;
+    --surface-muted: #1e232b;
+    --ink: #eceae6;
+    --ink-muted: #c2bdb5;
+    --ink-subtle: #9c968e;
+    --border: #2a3038;
+    --border-strong: #3b434e;
+    --accent: #8fb3e6;
+    --accent-ink: #0f1216;
+    --link: #8db8f2;
+    --focus: #60a5fa;
+    --breaking: #b91c1c;
+    --breaking-ink: #ffffff;
+    --notice-bg: #2a2210;
+    --notice-border: #b7791f;
+    --notice-ink: #f6e3b4;
+  }
+}
+
+/* Rarely needed (prefer tokens): `dark:` follows the explicit choice and, in auto mode, the system. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-link: var(--link);
+  --color-focus: var(--focus);
+  --color-breaking: var(--breaking);
+  --color-breaking-ink: var(--breaking-ink);
+  --color-notice-bg: var(--notice-bg);
+  --color-notice-border: var(--notice-border);
+  --color-notice-ink: var(--notice-ink);
+
+  /* next/font variables (src/app/layout.tsx); both subsets include cyrillic-ext for Ө ө Ү ү. */
+  --font-serif: var(--font-source-serif), Georgia, 'Times New Roman', serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
 @theme {
-  --font-sans: var(--font-noto-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Page side padding: 16px on phones, 24px from md. */
+  --spacing-gutter: 1rem;
+  --container-page: 72rem;
+  /* Reading column (~65 characters of Cyrillic body text). */
+  --container-content: 42rem;
+}
+
+@media (min-width: 48rem) {
+  :root {
+    --spacing-gutter: 1.5rem;
+  }
+}
+
+/* Type scale: mobile-first sizes that grow with the viewport. Serif for headlines and reading text. */
+@utility type-display {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 1.35rem + 1.8vw, 2.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+@utility type-headline {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(1.375rem, 1.2rem + 0.9vw, 1.875rem);
+  line-height: 1.18;
+}
+
+@utility type-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  line-height: 1.3;
+}
+
+@utility type-lede {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  line-height: 1.55;
+}
+
+@utility type-body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+  line-height: 1.7;
+}
+
+@utility type-meta {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-label {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
 }

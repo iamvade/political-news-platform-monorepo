@@ -16,7 +16,7 @@ How the platform is built, how to run it, and how to keep it healthy. The produc
 | `apps/api` — Fastify API + BullMQ workers | **Built** | [projects/api.md](projects/api.md) |
 | `packages/shared` — Zod contracts, content renderer, translit, API client | **Built** | [projects/shared.md](projects/shared.md) |
 | `apps/admin` — newsroom SPA (React + Vite + shadcn/ui) | **Built** (article editor, political data screens, homepage editor; organizations and users screens pending) | [projects/admin.md](projects/admin.md) |
-| `apps/web` — public site (Next.js) | Scaffold | [projects/web.md](projects/web.md) |
+| `apps/web` — public site (Next.js) | **Design system built** (tokens, components, /styleguide); pages pending | [projects/web.md](projects/web.md) |
 | `apps/mobile` — app (Expo) | Scaffold | [projects/mobile.md](projects/mobile.md) |
 
 ### Features
@@ -31,6 +31,7 @@ How the platform is built, how to run it, and how to keep it healthy. The produc
 | Public read API and caching | [features/public-api.md](features/public-api.md) |
 | Media: uploads, WebP variants, library | [features/media.md](features/media.md) |
 | Homepage layout: editor curation, versions, public endpoint | [features/homepage.md](features/homepage.md) |
+| Web design system: fonts, tokens, themes, components, /styleguide | [features/design-system.md](features/design-system.md) |
 
 ## Architecture
 
@@ -71,7 +72,7 @@ flowchart LR
 ```
 apps/api/            Fastify API, Drizzle schema + migrations, BullMQ jobs, CLIs
 apps/admin/          Newsroom SPA (article editor, political data, homepage)
-apps/web/            Public Next.js site (scaffold)
+apps/web/            Public Next.js site (design system, styleguide; pages pending)
 apps/mobile/         Expo app (scaffold)
 packages/shared/     Zod schemas, content renderer, translit, API client
 docker/              Postgres init SQL, SeaweedFS S3 config
@@ -99,4 +100,4 @@ End each page with `Last updated: YYYY-MM-DD — <what changed>`.
 Any change that affects behaviour, setup, env vars, routes, schema, jobs, dependencies or a gotcha updates the matching page **in the same change** (see the Documentation section of `CLAUDE.md`). New project or feature → new page from the template, linked above. Describe what **is**; plans belong in the PRD or under "Notables → follow-ups".
 
 ---
-Last updated: 2026-10-07 — homepage feature page; admin status.
+Last updated: 2026-10-07 — web design system page; web status.
