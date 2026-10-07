@@ -93,7 +93,7 @@ describe('admin homepage', () => {
 
     const [entry] = await app.db.select().from(auditLog).where(eq(auditLog.entityType, 'homepage_layout'));
     expect(entry).toMatchObject({ action: 'create', entityId: version, actorId: editor.user.id });
-    expect((app.jobs as FakeJobs).calls).toEqual([{ type: 'enqueueHomepageChanged' }]);
+    expect((app.jobs as FakeJobs).calls).toEqual([{ type: 'enqueueRevalidate', tags: ['homepage'] }]);
   });
 
   it('rejects a stale expectedVersion with EDIT_CONFLICT', async () => {

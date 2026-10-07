@@ -15,7 +15,7 @@ Each save is a new, immediately live version, kept for revert. The public API se
 flowchart LR
   E[Admin /homepage] -- PUT /v1/admin/homepage<br/>zones + expectedVersion --> API
   API -- insert --> L[(homepage_layouts<br/>append-only)]
-  API -- after commit --> J[revalidate job tags: home]
+  API -- after commit --> J[revalidate job tags: homepage]
   W[Web / app] -- GET /v1/public/homepage --> API
   API -- latest layout + published articles --> W
 ```
@@ -31,7 +31,7 @@ flowchart LR
 | Route | Does |
 |---|---|
 | `GET /v1/admin/homepage` | Live version (`version: null` before the first save), its zones, the pinned articles in any status (so the editor can flag unpublished ones), and the category names |
-| `PUT /v1/admin/homepage` | `{ zones, expectedVersion }` → inserts a new version, audits it (`entity_type = homepage_layout`), then enqueues the `home` revalidation |
+| `PUT /v1/admin/homepage` | `{ zones, expectedVersion }` → inserts a new version, audits it (`entity_type = homepage_layout`), then enqueues the `homepage` revalidation (`enqueueRevalidate(['homepage'])`) |
 | `GET /v1/admin/homepage/versions` | Saved versions, newest first |
 
 `PUT` rejects:
@@ -98,10 +98,11 @@ curl -s localhost:4000/v1/public/homepage | jq '.data | {hero: .hero.title, feat
 - The breaking banner (PRD §6.2 `breaking_banner`) is not built.
 - An article unpublished after being pinned simply disappears from the public homepage. The admin shows a warning until someone saves a layout without it.
 - `homepage_layouts` grows by one row per save; there is no pruning.
+- The web homepage that renders this layout is described in [public-site](public-site.md).
 
 ## Key files
 
 `apps/api/src/modules/homepage/`, `apps/api/src/db/schema/homepage.ts`, `apps/api/drizzle/0007_homepage_layouts.sql`, `packages/shared/src/schemas/{homepage,public}.ts`, `apps/admin/src/pages/homepage/`.
 
 ---
-Last updated: 2026-10-07 — initial version: versioned layouts, admin editor, public endpoint.
+Last updated: 2026-10-07 — revalidation tag renamed `homepage`; link to the web homepage. Earlier: versioned layouts, admin editor, public endpoint.

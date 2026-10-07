@@ -105,7 +105,7 @@ describe('articles', () => {
     expect(res.headers['cache-control']).toBe(NEWS);
     const article = publicArticleResponseSchema.parse(res.json()).data;
     expect(article.persons).toEqual([
-      { slug: 'g-batbayar', displayName: 'Г.Батбаяр', givenNameMn: 'Батбаяр', patronymicMn: 'Ганболд' },
+      { id: refs.personA.id, slug: 'g-batbayar', displayName: 'Г.Батбаяр', givenNameMn: 'Батбаяр', patronymicMn: 'Ганболд' },
     ]);
     expect(article.corrections).toEqual([{ date: '2026-01-02', description: 'Тоог зассан', reason: 'Буруу тоо' }]);
     expect(article.author).toEqual({ displayName: refs.author.displayName });

@@ -13,7 +13,7 @@ Mongolian political news platform. It combines articles with living profiles of 
 | [`apps/api`](docs/technical/projects/api.md) | Fastify API + BullMQ workers | Built |
 | [`packages/shared`](docs/technical/projects/shared.md) | Zod contracts, content renderer, translit, typed API client | Built |
 | [`apps/admin`](docs/technical/projects/admin.md) | Newsroom SPA | Built: article editor, political data screens, homepage editor |
-| [`apps/web`](docs/technical/projects/web.md) | Public Next.js site | Design system and `/styleguide`; pages pending |
+| [`apps/web`](docs/technical/projects/web.md) | Public Next.js site | Built: homepage, article and person pages, SEO, tag revalidation, `/styleguide` |
 | [`apps/mobile`](docs/technical/projects/mobile.md) | Expo app | Scaffold |
 
 ## Stack
@@ -21,7 +21,7 @@ Mongolian political news platform. It combines articles with living profiles of 
 - **API:** Fastify 5, TypeScript (strict), Drizzle ORM, Zod 4 (`fastify-type-provider-zod`), OpenAPI via `@fastify/swagger`
 - **Data:** PostgreSQL (`pg_trgm`), Redis, BullMQ
 - **Admin:** React + Vite, Tailwind + shadcn/ui, TanStack Query, Tiptap editor
-- **Web:** Next.js App Router, `next-intl`
+- **Web:** Next.js App Router (ISR + tag revalidation), `next-intl`, Tailwind
 - **Mobile:** Expo (React Native)
 - **Media:** Cloudflare R2 with presigned uploads and sharp WebP variants (SeaweedFS locally)
 - **Tooling:** Node 24 (`.nvmrc`), pnpm 12 workspaces via corepack, TypeScript 6, Vitest, ESLint
@@ -87,7 +87,7 @@ Then open the admin at http://localhost:5173 and log in with the account you jus
 | `pnpm build` | Build every package |
 | `pnpm lint` | ESLint across the repo |
 | `pnpm typecheck` | `tsc --noEmit` in every package |
-| `pnpm test` | Vitest in shared, api (needs Docker) and admin |
+| `pnpm test` | Vitest in shared, api (needs Docker), admin and web |
 | `pnpm db:generate --name=<slug>` | Generate a migration from the Drizzle schema |
 | `pnpm db:migrate` | Apply pending migrations |
 | `pnpm db:seed [--reset]` | Sample data (`--reset` truncates every table first) |

@@ -328,6 +328,10 @@ export function createApiClient(options: ApiClientOptions) {
       homepage: {
         get: (call?: CallOptions) => request('/v1/public/homepage', { schema: pub.publicHomepageResponseSchema, ...call }),
       },
+      parliament: {
+        /** Bill stage changes and roll calls in the last 7 days. */
+        week: (call?: CallOptions) => request('/v1/public/parliament/week', { schema: pub.publicParliamentWeekResponseSchema, ...call }),
+      },
       articles: {
         list: (query: { category?: string; tag?: string; page?: number; pageSize?: number } = {}, call?: CallOptions) =>
           request('/v1/public/articles', { query, schema: pub.publicArticleListResponseSchema, ...call }),

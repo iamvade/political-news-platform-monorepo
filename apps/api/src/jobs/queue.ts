@@ -71,8 +71,9 @@ export function createBullJobs(redisUrl: string): Jobs {
       ]);
     },
 
-    async enqueueHomepageChanged() {
-      await revalidate.add('tags', { tags: ['home'] }, EFFECT_JOB_OPTIONS);
+    async enqueueRevalidate(tags) {
+      if (tags.length === 0) return;
+      await revalidate.add('tags', { tags: [...new Set(tags)] }, EFFECT_JOB_OPTIONS);
     },
 
     async enqueueMediaVariants(mediaId) {

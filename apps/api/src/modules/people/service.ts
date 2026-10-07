@@ -331,10 +331,11 @@ export async function updatePosition(db: Db, user: AuthUser, id: number, body: U
 }
 
 /** Hard delete (admin only, audited). */
-export async function deletePosition(db: Db, user: AuthUser, id: number): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deletePosition(db: Db, user: AuthUser, id: number): Promise<AdminPosition> {
+  return db.transaction(async (tx) => {
     const [row] = await tx.delete(positions).where(eq(positions.id, id)).returning();
     if (!row) throw notFound('Position');
     await audit(tx, { actorId: user.id, action: 'delete', entityType: 'position', entityId: id, diff: { before: toAdminPosition(row) } });
+    return toAdminPosition(row);
   });
 }

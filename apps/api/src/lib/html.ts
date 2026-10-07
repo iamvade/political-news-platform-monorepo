@@ -1,12 +1,6 @@
-import { renderHtml, type ContentDoc } from '@news/shared/content';
+import { EMBED_SRC_PREFIXES, renderHtml, type ContentDoc } from '@news/shared/content';
 import sanitize from 'sanitize-html';
 
-/** The only iframe URLs renderHtml emits (see parseEmbedUrl in @news/shared/content). */
-const EMBED_SRC_PREFIXES = [
-  'https://www.youtube-nocookie.com/embed/',
-  'https://www.facebook.com/plugins/post.php?',
-  'https://www.facebook.com/plugins/video.php?',
-];
 
 /** Allowlist for article HTML. Mirrors what renderHtml can emit; anything else is discarded. */
 const ARTICLE_HTML_OPTIONS: sanitize.IOptions = {

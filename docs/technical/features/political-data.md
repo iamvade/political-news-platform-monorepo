@@ -95,6 +95,7 @@ curl -b jar -H 'origin: http://localhost:4000' -H "x-csrf-token: $CSRF" -H 'cont
 
 - New resource: schemas in `packages/shared/src/schemas/<domain>.ts`, service functions (list/get/create/update/delete with `audit()`), explicit routes in the domain's `admin.routes.ts`, an entry in `RESOURCES` (`apps/api/src/test/political.ts`) so the role matrix and CRUD tests cover it.
 - New import: follow `modules/legislation/import.ts` — `runImport` + `ImportIssues` + `loadRefs`.
+- **Web revalidation:** every write route calls `revalidateAfterCommit(app, tags)` (`lib/revalidate.ts`) after the service returns. Person-scoped records send `person:{id}`; organization edits and position imports send `people`; bills, stages, sponsors and votes send `parliament`; corrections send the corrected record's tag; imports send nothing on `dryRun`. A new resource must pick its tag. Delete services return the deleted DTO so the handler knows the person. Mapping: [public-site](public-site.md#revalidation-srcappapirevalidateroutets). Tests: `modules/revalidation.test.ts`.
 
 ## Notables
 
@@ -110,4 +111,4 @@ curl -b jar -H 'origin: http://localhost:4000' -H "x-csrf-token: $CSRF" -H 'cont
 `apps/api/src/modules/{people,legislation,records,corrections}/` (incl. `legislation/vote-entry.ts`), `apps/api/src/lib/{audit,crud,db-errors,imports,slugs}.ts`, `apps/api/src/db/schema/audit.ts`, `packages/shared/src/schemas/{people,legislation,records,corrections,imports}.ts`.
 
 ---
-Last updated: 2026-10-07 — promise status history (`promise_updates`, status endpoint), vote roster and sessions, admin screens.
+Last updated: 2026-10-07 — write routes revalidate web cache tags. Earlier: promise status history, vote roster and sessions, admin screens.

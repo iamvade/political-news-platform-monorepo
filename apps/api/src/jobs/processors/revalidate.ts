@@ -8,8 +8,12 @@ export interface RevalidateDeps {
   fetch?: typeof fetch;
 }
 
-/** Cache tags for a job: an article's page plus home, or the explicit list. */
-export const revalidateTags = (data: RevalidateJobData): string[] => ('tags' in data ? data.tags : [`article:${data.articleId}`, 'home']);
+/**
+ * Cache tags for a job: an article's page plus the lists that show it (homepage, article lists), or the
+ * explicit list. Must match the tags the web's data layer puts on its fetches (apps/web/src/lib/data.ts).
+ */
+export const revalidateTags = (data: RevalidateJobData): string[] =>
+  'tags' in data ? data.tags : [`article:${data.articleId}`, 'homepage', 'articles'];
 
 /** Asks the Next.js site to revalidate the given tags. Throws on failure so BullMQ retries. */
 export async function processRevalidate(deps: RevalidateDeps, data: RevalidateJobData): Promise<'sent' | 'skipped'> {

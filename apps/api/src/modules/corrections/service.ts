@@ -80,8 +80,8 @@ export async function updateCorrection(
   });
 }
 
-export async function deleteCorrection(db: Db, user: AuthUser, id: number): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deleteCorrection(db: Db, user: AuthUser, id: number): Promise<AdminCorrection> {
+  return db.transaction(async (tx) => {
     const [row] = await tx.delete(corrections).where(eq(corrections.id, id)).returning();
     if (!row) throw notFound('Correction');
     await audit(tx, {
@@ -91,5 +91,6 @@ export async function deleteCorrection(db: Db, user: AuthUser, id: number): Prom
       entityId: id,
       diff: { before: toAdminCorrection(row) },
     });
+    return toAdminCorrection(row);
   });
 }

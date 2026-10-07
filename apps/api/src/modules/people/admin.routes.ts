@@ -22,6 +22,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { paginate } from '../../lib/crud';
 import { deleteResponses, adminErrorResponses as errors, currentUser } from '../../lib/routes';
 import { csrfSecurity } from '../../plugins/swagger';
+import { cacheTags, revalidateAfterCommit } from '../../lib/revalidate';
 import { importPositions } from './import';
 import * as service from './service';
 
@@ -42,14 +43,19 @@ export const peopleAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/persons/:id', { onRequest: dataRoles, schema: { tags: personTags, params: idParamsSchema, response: { 200: adminPersonResponseSchema, ...errors } } }, async (request) => ({
     data: await service.getPerson(db, request.params.id),
   }));
-  app.post('/persons', { onRequest: dataRoles, schema: { tags: personTags, security: csrfSecurity, body: createPersonBodySchema, response: { 201: adminPersonResponseSchema, ...errors } } }, async (request, reply) =>
-    reply.code(201).send({ data: await service.createPerson(db, currentUser(request), request.body) }),
-  );
-  app.patch('/persons/:id', { onRequest: dataRoles, schema: { tags: personTags, security: csrfSecurity, params: idParamsSchema, body: updatePersonBodySchema, response: { 200: adminPersonResponseSchema, ...errors } } }, async (request) => ({
-    data: await service.updatePerson(db, currentUser(request), request.params.id, request.body),
-  }));
+  app.post('/persons', { onRequest: dataRoles, schema: { tags: personTags, security: csrfSecurity, body: createPersonBodySchema, response: { 201: adminPersonResponseSchema, ...errors } } }, async (request, reply) => {
+    const saved = await service.createPerson(db, currentUser(request), request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.id)]);
+    return reply.code(201).send({ data: saved });
+  });
+  app.patch('/persons/:id', { onRequest: dataRoles, schema: { tags: personTags, security: csrfSecurity, params: idParamsSchema, body: updatePersonBodySchema, response: { 200: adminPersonResponseSchema, ...errors } } }, async (request) => {
+    const saved = await service.updatePerson(db, currentUser(request), request.params.id, request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.id)]);
+    return { data: saved };
+  });
   app.delete('/persons/:id', { onRequest: dataRoles, schema: { tags: personTags, summary: 'Soft delete', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
     await service.deletePerson(db, currentUser(request), request.params.id);
+    await revalidateAfterCommit(app, [cacheTags.person(request.params.id)]);
     return reply.code(204).send();
   });
 
@@ -65,11 +71,14 @@ export const peopleAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post('/organizations', { onRequest: dataRoles, schema: { tags: orgTags, security: csrfSecurity, body: createOrganizationBodySchema, response: { 201: adminOrganizationResponseSchema, ...errors } } }, async (request, reply) =>
     reply.code(201).send({ data: await service.createOrganization(db, currentUser(request), request.body) }),
   );
-  app.patch('/organizations/:id', { onRequest: dataRoles, schema: { tags: orgTags, security: csrfSecurity, params: idParamsSchema, body: updateOrganizationBodySchema, response: { 200: adminOrganizationResponseSchema, ...errors } } }, async (request) => ({
-    data: await service.updateOrganization(db, currentUser(request), request.params.id, request.body),
-  }));
+  app.patch('/organizations/:id', { onRequest: dataRoles, schema: { tags: orgTags, security: csrfSecurity, params: idParamsSchema, body: updateOrganizationBodySchema, response: { 200: adminOrganizationResponseSchema, ...errors } } }, async (request) => {
+    const saved = await service.updateOrganization(db, currentUser(request), request.params.id, request.body);
+    await revalidateAfterCommit(app, [cacheTags.people]);
+    return { data: saved };
+  });
   app.delete('/organizations/:id', { onRequest: dataRoles, schema: { tags: orgTags, summary: 'Soft delete', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
     await service.deleteOrganization(db, currentUser(request), request.params.id);
+    await revalidateAfterCommit(app, [cacheTags.people]);
     return reply.code(204).send();
   });
 
@@ -82,14 +91,19 @@ export const peopleAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/positions/:id', { onRequest: dataRoles, schema: { tags: positionTags, params: idParamsSchema, response: { 200: adminPositionResponseSchema, ...errors } } }, async (request) => ({
     data: await service.getPosition(db, request.params.id),
   }));
-  app.post('/positions', { onRequest: dataRoles, schema: { tags: positionTags, security: csrfSecurity, body: createPositionBodySchema, response: { 201: adminPositionResponseSchema, ...errors } } }, async (request, reply) =>
-    reply.code(201).send({ data: await service.createPosition(db, currentUser(request), request.body) }),
-  );
-  app.patch('/positions/:id', { onRequest: dataRoles, schema: { tags: positionTags, security: csrfSecurity, params: idParamsSchema, body: updatePositionBodySchema, response: { 200: adminPositionResponseSchema, ...errors } } }, async (request) => ({
-    data: await service.updatePosition(db, currentUser(request), request.params.id, request.body),
-  }));
+  app.post('/positions', { onRequest: dataRoles, schema: { tags: positionTags, security: csrfSecurity, body: createPositionBodySchema, response: { 201: adminPositionResponseSchema, ...errors } } }, async (request, reply) => {
+    const saved = await service.createPosition(db, currentUser(request), request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
+    return reply.code(201).send({ data: saved });
+  });
+  app.patch('/positions/:id', { onRequest: dataRoles, schema: { tags: positionTags, security: csrfSecurity, params: idParamsSchema, body: updatePositionBodySchema, response: { 200: adminPositionResponseSchema, ...errors } } }, async (request) => {
+    const saved = await service.updatePosition(db, currentUser(request), request.params.id, request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
+    return { data: saved };
+  });
   app.delete('/positions/:id', { onRequest: adminOnly, schema: { tags: positionTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
-    await service.deletePosition(db, currentUser(request), request.params.id);
+    const saved = await service.deletePosition(db, currentUser(request), request.params.id);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
     return reply.code(204).send();
   });
   app.post(
@@ -99,6 +113,10 @@ export const peopleAdminRoutes: FastifyPluginAsyncZod = async (app) => {
       bodyLimit: IMPORT_BODY_LIMIT,
       schema: { tags: positionTags, summary: 'Bulk upsert positions (dryRun returns the diff)', security: csrfSecurity, body: positionImportBodySchema, response: { 200: importResultResponseSchema, ...errors } },
     },
-    async (request) => ({ data: await importPositions(db, currentUser(request), request.body) }),
+    async (request) => {
+      const saved = await importPositions(db, currentUser(request), request.body);
+      await revalidateAfterCommit(app, saved.dryRun ? [] : [cacheTags.people]);
+      return { data: saved };
+    },
   );
 };

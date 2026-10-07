@@ -29,8 +29,9 @@ const orgRefColumns = {
   color: organizations.color,
 };
 
-function personRef(row: { slug: string; givenNameMn: string; patronymicMn: string }) {
+function personRef(row: { id: number; slug: string; givenNameMn: string; patronymicMn: string }) {
   return {
+    id: row.id,
     slug: row.slug,
     displayName: personDisplayName(row.patronymicMn, row.givenNameMn),
     givenNameMn: row.givenNameMn,
@@ -245,7 +246,7 @@ export async function getOrganizationDetail(db: Db, mediaBase: string | undefine
 
   const members = await db
     .select({
-      person: { slug: persons.slug, givenNameMn: persons.givenNameMn, patronymicMn: persons.patronymicMn },
+      person: { id: persons.id, slug: persons.slug, givenNameMn: persons.givenNameMn, patronymicMn: persons.patronymicMn },
       titleMn: positions.titleMn,
       titleEn: positions.titleEn,
       startDate: positions.startDate,

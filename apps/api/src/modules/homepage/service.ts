@@ -105,7 +105,7 @@ export async function saveHomepage(deps: HomepageDeps, user: AuthUser, body: Sav
   });
 
   try {
-    await deps.jobs.enqueueHomepageChanged();
+    await deps.jobs.enqueueRevalidate(['homepage']);
   } catch (err) {
     deps.log.error({ err }, 'Failed to enqueue homepage revalidation');
   }

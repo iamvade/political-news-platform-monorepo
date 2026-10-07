@@ -163,16 +163,16 @@ describe('processRevalidate', () => {
     const [target, init] = fetchMock.mock.calls[0]!;
     expect(target).toBe('http://web.test/api/revalidate');
     expect(new Headers(init?.headers).get('x-revalidate-secret')).toBe('s'.repeat(32));
-    expect(JSON.parse(String(init?.body))).toEqual({ tags: ['article:7', 'home'] });
+    expect(JSON.parse(String(init?.body))).toEqual({ tags: ['article:7', 'homepage', 'articles'] });
   });
 
   it('posts explicit tags (homepage changes)', async () => {
     const fetchMock = vi.fn<typeof fetch>(async () => new Response(null, { status: 200 }));
     const env = { WEB_REVALIDATE_URL: 'http://web.test/api/revalidate', WEB_REVALIDATE_SECRET: 's'.repeat(32) };
 
-    await processRevalidate({ env, log, fetch: fetchMock }, { tags: ['home'] });
+    await processRevalidate({ env, log, fetch: fetchMock }, { tags: ['homepage'] });
 
-    expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({ tags: ['home'] });
+    expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({ tags: ['homepage'] });
   });
 
   it('throws on a non-2xx response so BullMQ retries', async () => {

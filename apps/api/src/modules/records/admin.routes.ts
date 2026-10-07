@@ -23,6 +23,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { paginate } from '../../lib/crud';
 import { deleteResponses, adminErrorResponses as errors, currentUser } from '../../lib/routes';
 import { csrfSecurity } from '../../plugins/swagger';
+import { cacheTags, personOrPeople, revalidateAfterCommit } from '../../lib/revalidate';
 import * as service from './service';
 
 /** Protected admin scope: statements, promises, declarations. */
@@ -40,14 +41,19 @@ export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/statements/:id', { onRequest: dataRoles, schema: { tags: statementTags, params: idParamsSchema, response: { 200: adminStatementResponseSchema, ...errors } } }, async (request) => ({
     data: await service.getStatement(db, request.params.id),
   }));
-  app.post('/statements', { onRequest: dataRoles, schema: { tags: statementTags, security: csrfSecurity, body: createStatementBodySchema, response: { 201: adminStatementResponseSchema, ...errors } } }, async (request, reply) =>
-    reply.code(201).send({ data: await service.createStatement(db, currentUser(request), request.body) }),
-  );
-  app.patch('/statements/:id', { onRequest: dataRoles, schema: { tags: statementTags, security: csrfSecurity, params: idParamsSchema, body: updateStatementBodySchema, response: { 200: adminStatementResponseSchema, ...errors } } }, async (request) => ({
-    data: await service.updateStatement(db, currentUser(request), request.params.id, request.body),
-  }));
+  app.post('/statements', { onRequest: dataRoles, schema: { tags: statementTags, security: csrfSecurity, body: createStatementBodySchema, response: { 201: adminStatementResponseSchema, ...errors } } }, async (request, reply) => {
+    const saved = await service.createStatement(db, currentUser(request), request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
+    return reply.code(201).send({ data: saved });
+  });
+  app.patch('/statements/:id', { onRequest: dataRoles, schema: { tags: statementTags, security: csrfSecurity, params: idParamsSchema, body: updateStatementBodySchema, response: { 200: adminStatementResponseSchema, ...errors } } }, async (request) => {
+    const saved = await service.updateStatement(db, currentUser(request), request.params.id, request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
+    return { data: saved };
+  });
   app.delete('/statements/:id', { onRequest: adminOnly, schema: { tags: statementTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
-    await service.deleteStatement(db, currentUser(request), request.params.id);
+    const saved = await service.deleteStatement(db, currentUser(request), request.params.id);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
     return reply.code(204).send();
   });
 
@@ -60,12 +66,16 @@ export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/promises/:id', { onRequest: dataRoles, schema: { tags: promiseTags, params: idParamsSchema, response: { 200: adminPromiseResponseSchema, ...errors } } }, async (request) => ({
     data: await service.getPromise(db, request.params.id),
   }));
-  app.post('/promises', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, body: createPromiseBodySchema, response: { 201: adminPromiseResponseSchema, ...errors } } }, async (request, reply) =>
-    reply.code(201).send({ data: await service.createPromise(db, currentUser(request), request.body) }),
-  );
-  app.patch('/promises/:id', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, params: idParamsSchema, body: updatePromiseBodySchema, response: { 200: adminPromiseResponseSchema, ...errors } } }, async (request) => ({
-    data: await service.updatePromise(db, currentUser(request), request.params.id, request.body),
-  }));
+  app.post('/promises', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, body: createPromiseBodySchema, response: { 201: adminPromiseResponseSchema, ...errors } } }, async (request, reply) => {
+    const saved = await service.createPromise(db, currentUser(request), request.body);
+    await revalidateAfterCommit(app, personOrPeople(saved.personId));
+    return reply.code(201).send({ data: saved });
+  });
+  app.patch('/promises/:id', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, params: idParamsSchema, body: updatePromiseBodySchema, response: { 200: adminPromiseResponseSchema, ...errors } } }, async (request) => {
+    const saved = await service.updatePromise(db, currentUser(request), request.params.id, request.body);
+    await revalidateAfterCommit(app, personOrPeople(saved.personId));
+    return { data: saved };
+  });
   app.post(
     '/promises/:id/status',
     {
@@ -79,7 +89,11 @@ export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
         response: { 200: adminPromiseResponseSchema, ...errors },
       },
     },
-    async (request) => ({ data: await service.changePromiseStatus(db, currentUser(request), request.params.id, request.body) }),
+    async (request) => {
+      const saved = await service.changePromiseStatus(db, currentUser(request), request.params.id, request.body);
+      await revalidateAfterCommit(app, personOrPeople(saved.personId));
+      return { data: saved };
+    },
   );
   app.get(
     '/promises/:id/updates',
@@ -93,7 +107,8 @@ export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   );
   app.delete('/promises/:id', { onRequest: adminOnly, schema: { tags: promiseTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
-    await service.deletePromise(db, currentUser(request), request.params.id);
+    const saved = await service.deletePromise(db, currentUser(request), request.params.id);
+    await revalidateAfterCommit(app, personOrPeople(saved.personId));
     return reply.code(204).send();
   });
 
@@ -106,14 +121,19 @@ export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.get('/declarations/:id', { onRequest: dataRoles, schema: { tags: declarationTags, params: idParamsSchema, response: { 200: adminDeclarationResponseSchema, ...errors } } }, async (request) => ({
     data: await service.getDeclaration(db, request.params.id),
   }));
-  app.post('/declarations', { onRequest: dataRoles, schema: { tags: declarationTags, security: csrfSecurity, body: createDeclarationBodySchema, response: { 201: adminDeclarationResponseSchema, ...errors } } }, async (request, reply) =>
-    reply.code(201).send({ data: await service.createDeclaration(db, currentUser(request), request.body) }),
-  );
-  app.patch('/declarations/:id', { onRequest: dataRoles, schema: { tags: declarationTags, security: csrfSecurity, params: idParamsSchema, body: updateDeclarationBodySchema, response: { 200: adminDeclarationResponseSchema, ...errors } } }, async (request) => ({
-    data: await service.updateDeclaration(db, currentUser(request), request.params.id, request.body),
-  }));
+  app.post('/declarations', { onRequest: dataRoles, schema: { tags: declarationTags, security: csrfSecurity, body: createDeclarationBodySchema, response: { 201: adminDeclarationResponseSchema, ...errors } } }, async (request, reply) => {
+    const saved = await service.createDeclaration(db, currentUser(request), request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
+    return reply.code(201).send({ data: saved });
+  });
+  app.patch('/declarations/:id', { onRequest: dataRoles, schema: { tags: declarationTags, security: csrfSecurity, params: idParamsSchema, body: updateDeclarationBodySchema, response: { 200: adminDeclarationResponseSchema, ...errors } } }, async (request) => {
+    const saved = await service.updateDeclaration(db, currentUser(request), request.params.id, request.body);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
+    return { data: saved };
+  });
   app.delete('/declarations/:id', { onRequest: adminOnly, schema: { tags: declarationTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
-    await service.deleteDeclaration(db, currentUser(request), request.params.id);
+    const saved = await service.deleteDeclaration(db, currentUser(request), request.params.id);
+    await revalidateAfterCommit(app, [cacheTags.person(saved.personId)]);
     return reply.code(204).send();
   });
 };

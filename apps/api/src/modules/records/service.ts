@@ -86,11 +86,12 @@ export async function updateStatement(db: Db, user: AuthUser, id: number, body: 
   });
 }
 
-export async function deleteStatement(db: Db, user: AuthUser, id: number): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deleteStatement(db: Db, user: AuthUser, id: number): Promise<AdminStatement> {
+  return db.transaction(async (tx) => {
     const [row] = await tx.delete(statements).where(eq(statements.id, id)).returning();
     if (!row) throw notFound('Statement');
     await audit(tx, { actorId: user.id, action: 'delete', entityType: 'statement', entityId: id, diff: { before: toAdminStatement(row) } });
+    return toAdminStatement(row);
   });
 }
 
@@ -219,11 +220,12 @@ export async function listPromiseUpdates(db: Db, id: number, query: PaginationQu
   return { items: rows.map(toAdminPromiseUpdate), total: total?.n ?? 0 };
 }
 
-export async function deletePromise(db: Db, user: AuthUser, id: number): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deletePromise(db: Db, user: AuthUser, id: number): Promise<AdminPromise> {
+  return db.transaction(async (tx) => {
     const [row] = await tx.delete(promises).where(eq(promises.id, id)).returning();
     if (!row) throw notFound('Promise');
     await audit(tx, { actorId: user.id, action: 'delete', entityType: 'promise', entityId: id, diff: { before: toAdminPromise(row) } });
+    return toAdminPromise(row);
   });
 }
 
@@ -298,8 +300,8 @@ export async function updateDeclaration(
   });
 }
 
-export async function deleteDeclaration(db: Db, user: AuthUser, id: number): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deleteDeclaration(db: Db, user: AuthUser, id: number): Promise<AdminDeclaration> {
+  return db.transaction(async (tx) => {
     const [row] = await tx.delete(declarations).where(eq(declarations.id, id)).returning();
     if (!row) throw notFound('Declaration');
     await audit(tx, {
@@ -309,5 +311,6 @@ export async function deleteDeclaration(db: Db, user: AuthUser, id: number): Pro
       entityId: id,
       diff: { before: toAdminDeclaration(row) },
     });
+    return toAdminDeclaration(row);
   });
 }

@@ -5,6 +5,7 @@ import { routes } from '@/lib/routes';
 import { PartyBadge, type PartyRef } from './party-badge';
 
 export interface PersonCardData {
+  id: PublicPerson['id'];
   slug: PublicPerson['slug'];
   displayName: PublicPerson['displayName'];
   photo: PublicMedia | null;
@@ -35,7 +36,7 @@ export function PersonCard({ person }: { person: PersonCardData }) {
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <p className="font-semibold text-ink">
-          <Link href={routes.person(person.slug)} className="after:absolute after:inset-0 group-hover:underline group-hover:underline-offset-2">
+          <Link href={routes.person(person)} className="after:absolute after:inset-0 group-hover:underline group-hover:underline-offset-2">
             {person.displayName}
           </Link>
         </p>

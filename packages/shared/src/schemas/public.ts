@@ -35,6 +35,8 @@ export const publicMediaSchema = z.object({
 });
 
 export const publicPersonRefSchema = z.object({
+  /** Canonical id (web URLs are /person/{id}-{slug}). */
+  id: z.number().int(),
   slug: z.string(),
   displayName: z.string(),
   givenNameMn: z.string(),
@@ -203,6 +205,21 @@ export const publicBillSchema = z.object({
 });
 export type PublicBill = z.infer<typeof publicBillSchema>;
 
+// --- Parliament this week ----------------------------------------------------------------------------------------
+
+const publicBillRefSchema = z.object({ slug: z.string(), titleMn: z.string() });
+
+/** Bill stage changes and roll calls in the last 7 days (Asia/Ulaanbaatar calendar days, `from`..`to` inclusive). */
+export const publicParliamentWeekSchema = z.object({
+  from: isoDateSchema,
+  to: isoDateSchema,
+  stages: z.array(
+    z.object({ bill: publicBillRefSchema, stage: billStageSchema, date: isoDateSchema, noteMn: z.string().nullable(), sourceUrl: z.string() }),
+  ),
+  votes: z.array(z.object({ bill: publicBillRefSchema, date: isoDateSchema, motion: z.string(), tally: voteTallySchema, sourceUrl: z.string() })),
+});
+export type PublicParliamentWeek = z.infer<typeof publicParliamentWeekSchema>;
+
 export const publicArticleListResponseSchema = listResponse(publicArticleSummarySchema);
 export const publicHomepageResponseSchema = dataResponse(publicHomepageSchema);
 export const publicArticleResponseSchema = dataResponse(publicArticleSchema);
@@ -215,3 +232,4 @@ export const publicPromiseListResponseSchema = listResponse(publicPromiseSchema)
 export const publicDeclarationListResponseSchema = listResponse(publicDeclarationSchema);
 export const publicOrganizationResponseSchema = dataResponse(publicOrganizationSchema);
 export const publicBillResponseSchema = dataResponse(publicBillSchema);
+export const publicParliamentWeekResponseSchema = dataResponse(publicParliamentWeekSchema);

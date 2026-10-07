@@ -121,7 +121,7 @@ stateDiagram-v2
 - **Slugs.** A slug comes from the title via `slugify` (Mongolian Cyrillic → ASCII), with `-2`, `-3`… on collision. An explicit slug that is already taken → 409 `SLUG_TAKEN`. URLs are canonical by id.
 - **Cover.** The cover media must be `ready` with alt text and credit ([media](media.md)); otherwise 400 `MEDIA_NOT_USABLE`.
 - **After commit** ([jobs](jobs.md)):
-  - publish → `enqueuePublished` (revalidate, push, search)
+  - publish → `enqueuePublished` (revalidate `article:{id}`, `homepage`, `articles`; push; search)
   - edits to a published article, or unpublish → `enqueueChanged`
   - schedule → a delayed job
   - publish or unpublish of a scheduled article → the job is cancelled
@@ -142,7 +142,7 @@ stateDiagram-v2
   2. the sanitize allowlist in `apps/api/src/lib/html.ts`
   3. the Tiptap extension in `apps/admin/src/editor/` (see [admin](../projects/admin.md#article-editor))
   4. the tests: `render.test.ts`, `html.test.ts` and `apps/admin/src/editor/extensions.test.ts`; the last one proves the editor's JSON passes the allowlist
-- **Adding an embed provider** means a new branch in `parseEmbedUrl`, a sanitizer hostname and prefix, and the web CSP `frame-src` ([web](../projects/web.md)).
+- **Adding an embed provider** means a new branch in `parseEmbedUrl`, a sanitizer hostname, a prefix in `EMBED_SRC_PREFIXES` (`@news/shared/content`, shared by the API sanitizer and the web), the web's `deferEmbeds` pattern, and the web CSP `frame-src` ([public-site](public-site.md#article-body-and-embeds)).
 - **Changing permissions or transitions:** update `packages/shared/src/policies/articles.ts` (`can`, `TRANSITIONS`). Then update the table tests in `policies/articles.test.ts`, `articles.routes.test.ts` and `articles.transitions.test.ts`, plus the admin workflow test (`article-editor-page.test.tsx`).
 - **Tests:**
   - links, autosave, conflicts and embeds: `articles.editor.test.ts`
@@ -156,7 +156,7 @@ stateDiagram-v2
 - Conflict detection is optimistic (`updated_at`), not a lock. Two people can open the same article, and the second to save gets 409 and must reload, which discards their unsaved changes. There's no merge.
 - Autosave is never used on published articles (each save there needs an edit type and may create a public correction).
 - The lookup search does not yet match Latin-typed Mongolian against Cyrillic names (only against the Latin slug). The search module will add that.
-- `bodyHtml` keeps real embed iframes for consumers that want them as they are. The public web renders embeds **click-to-load** from `bodyJson` instead (privacy and LCP; decided 2026-10-07, see [web](../projects/web.md#notables)). The mobile app should follow the same rule.
+- `bodyHtml` keeps real embed iframes for consumers that want them as they are. The public web swaps them for **click-to-load** buttons before rendering (privacy and LCP; decided 2026-10-07, see [public-site](public-site.md#article-body-and-embeds)). The mobile app should follow the same rule.
 - Follow-ups: delete, edit locks or presence, redirects on slug change, slug editing in the admin.
 
 ## Key files
@@ -165,4 +165,4 @@ stateDiagram-v2
 - Shared: `packages/shared/src/content/`, `packages/shared/src/policies/articles.ts`, `packages/shared/src/schemas/{articles,lookup}.ts`
 
 ---
-Last updated: 2026-10-07 — embeds, pull quotes, image captions, links, autosave, conflicts, lookups, tag creation, admin editor; click-to-load note for public embeds.
+Last updated: 2026-10-07 — revalidate tags; web click-to-load embeds built; shared `EMBED_SRC_PREFIXES`. Earlier: embeds, pull quotes, captions, links, autosave, conflicts, lookups, admin editor.

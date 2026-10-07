@@ -87,7 +87,8 @@ Not automated yet; the API refuses to start when the critical items are wrong.
 - `TRUST_PROXY=true` behind Cloudflare; firewall the origin to Cloudflare IPs.
 - Two R2 buckets: **originals private**, **public** with a custom domain → `MEDIA_PUBLIC_BASE_URL`. All `S3_*` / `MEDIA_*` set (enforced). Run `pnpm storage:init` once (CORS for the admin origin).
 - `CORS_ORIGINS` = admin + web origins.
-- `WEB_REVALIDATE_URL` + `WEB_REVALIDATE_SECRET` once the web revalidation endpoint exists.
+- Web: `API_URL`, `SITE_URL` (the public origin, required: canonical, Open Graph and JSON-LD URLs) and `WEB_REVALIDATE_SECRET`.
+- API: `WEB_REVALIDATE_URL=${SITE_URL}/api/revalidate` (or the web container's internal URL) and `WEB_REVALIDATE_SECRET` with the **same** value as the web's (≥ 32 chars). Check: a publish logs `Revalidated cache tags` in the web logs.
 - `WORKERS_ENABLED`: true for a single process; to split, run the same image twice (API with `false`, worker with `true`).
 - Run `pnpm db:migrate` before starting a new version.
 
@@ -102,4 +103,4 @@ Not automated yet; the API refuses to start when the critical items are wrong.
 `package.json`, `pnpm-workspace.yaml`, `apps/api/package.json`, `apps/api/drizzle.config.ts`, `apps/api/src/db/{migrate,migrator,seed,seeder}.ts`, `apps/api/src/cli/{create-admin,storage-init}.ts`.
 
 ---
-Last updated: 2026-10-07 — web tests in `pnpm test`.
+Last updated: 2026-10-07 — production checklist: web `SITE_URL` and the shared revalidation secret. Earlier: web tests in `pnpm test`.

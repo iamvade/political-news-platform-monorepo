@@ -478,6 +478,9 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.3.3

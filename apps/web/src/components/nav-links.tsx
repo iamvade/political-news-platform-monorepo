@@ -12,7 +12,11 @@ export const NAV_ITEMS = [
   { key: 'cabinet', href: routes.cabinet },
 ] as const;
 
-const isActive = (pathname: string, href: string) => (href === '/' ? pathname === '/' || pathname.startsWith('/news/') : pathname.startsWith(href));
+const isActive = (pathname: string, href: string) => {
+  if (href === '/') return pathname === '/' || pathname.startsWith('/news/');
+  if (href === '/people') return pathname.startsWith('/people') || pathname.startsWith('/person/');
+  return pathname.startsWith(href);
+};
 
 /** Main navigation links; marks the current section with aria-current. */
 export function NavLinks({ layout }: { layout: 'bar' | 'stack' }) {

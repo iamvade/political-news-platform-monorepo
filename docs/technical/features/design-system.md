@@ -108,7 +108,7 @@ Server components, unless marked *client*. Labels come from `messages/mn.json`, 
 | `ThemeToggle` *client* | — | Auto / light / dark |
 | `SiteFooter` | — | Trust pages (PRD §10): policy, methodology, ownership, corrections, right of reply, contact, legal |
 | `ArticleCard` | `article: PublicArticleSummary`, `size: 'lead' \| 'standard' \| 'compact'`, `priority?`, `headingLevel?` | One stretched link per card. `<img srcset>` from the WebP variants (alt="" here; the headline is the link text). `priority` makes the image eager with high fetch priority, for the first lead card. Time in Ulaanbaatar |
-| `PersonCard` | `person: PersonCardData` (slug, displayName, photo, role, party, constituency) | Initials when there is no photo; the party badge is not a nested link |
+| `PersonCard` | `person: PersonCardData` (id, slug, displayName, photo, role, party, constituency) | Initials when there is no photo; the party badge is not a nested link |
 | `PartyBadge` | `party: PartyRef`, `link?` | Colour only as a dot; the short name is always written and the full name is the accessible name. Only `#RRGGBB` colours are used (anything else gives a neutral dot) |
 | `Tag` | `tag: { slug, nameMn }` | Links to `/tag/{slug}` |
 | `Breadcrumbs` | `items: { label, href? }[]` | Last item gets `aria-current="page"`; long labels truncate on phones |
@@ -116,7 +116,7 @@ Server components, unless marked *client*. Labels come from `messages/mn.json`, 
 | `SourceLink` | `href`, `variant: 'inline' \| 'icon'` | Host always visible or announced; new tab with `noopener noreferrer` |
 | `CorrectionNotice` | `corrections: { date, description, reason }[]` | `aside role="note"`, newest first, links to `/corrections`; renders nothing when empty |
 
-URL builders live in `lib/routes.ts` (PRD §7: `/news/{id}-{slug}`, `/person/{slug}`, `/party/{slug}`, `/tag/{slug}`…). Image `src`/`srcSet` come from `lib/media.ts`.
+URL builders live in `lib/routes.ts` (PRD §7: `/news/{id}-{slug}`, `/person/{id}-{slug}`, `/party/{slug}`, `/tag/{slug}`…; `parseIdSlug` reads an `{id}-{slug}` segment). Image `src`/`srcSet` come from `lib/media.ts`.
 
 ### /styleguide
 

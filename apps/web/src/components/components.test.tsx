@@ -70,7 +70,7 @@ describe('PartyBadge', () => {
 describe('PersonCard', () => {
   it('links the whole card to the profile and shows role, party and constituency', () => {
     renderWithIntl(<PersonCard person={personCard()} />);
-    expect(screen.getByRole('link', { name: 'Г.Батбаяр' })).toHaveAttribute('href', '/person/g-batbayar');
+    expect(screen.getByRole('link', { name: 'Г.Батбаяр' })).toHaveAttribute('href', '/person/12-g-batbayar');
     expect(screen.getAllByRole('link')).toHaveLength(1); // the party badge is not a nested link
     expect(screen.getByText('УИХ-ын гишүүн')).toBeInTheDocument();
     expect(screen.getByText('МАН')).toBeInTheDocument();

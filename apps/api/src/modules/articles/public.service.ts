@@ -139,7 +139,7 @@ export async function getPublishedArticle(db: Db, mediaBase: string | undefined,
       .where(eq(articleTags.articleId, id))
       .orderBy(asc(tags.nameMn)),
     db
-      .select({ slug: persons.slug, givenNameMn: persons.givenNameMn, patronymicMn: persons.patronymicMn })
+      .select({ id: persons.id, slug: persons.slug, givenNameMn: persons.givenNameMn, patronymicMn: persons.patronymicMn })
       .from(articlePersons)
       .innerJoin(persons, and(eq(persons.id, articlePersons.personId), isNull(persons.deletedAt)))
       .where(eq(articlePersons.articleId, id))

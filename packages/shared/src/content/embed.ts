@@ -1,4 +1,11 @@
 export const EMBED_PROVIDERS = ['youtube', 'facebook'] as const;
+
+/** The only iframe URLs `parseEmbedUrl` produces (API sanitizer and web click-to-load both check against these). */
+export const EMBED_SRC_PREFIXES = [
+  'https://www.youtube-nocookie.com/embed/',
+  'https://www.facebook.com/plugins/post.php?',
+  'https://www.facebook.com/plugins/video.php?',
+] as const;
 export type EmbedProvider = (typeof EMBED_PROVIDERS)[number];
 
 export interface ParsedEmbed {

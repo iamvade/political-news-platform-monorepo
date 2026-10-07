@@ -78,9 +78,9 @@ export const ARTICLES: PublicArticleSummary[] = [
 ];
 
 export const PEOPLE: PersonCardData[] = [
-  { slug: 'g-batbayar', displayName: 'Г.Батбаяр', photo: placeholder(200, 320, 320), role: 'УИХ-ын гишүүн', party: PARTIES[0]!, constituency: 'Сэлэнгэ аймаг, 3-р тойрог' },
-  { slug: 'd-sarantuya', displayName: 'Д.Сарантуяа', photo: null, role: 'Сангийн сайд', party: PARTIES[1]!, constituency: null },
-  { slug: 'ts-oyunbileg', displayName: 'Ц.Оюунбилэг', photo: null, role: 'Улсын Их Хурлын Төсвийн байнгын хорооны дарга, УИХ-ын гишүүн', party: PARTIES[3]!, constituency: 'Өвөрхангай аймаг, 9-р тойрог' },
+  { id: 1, slug: 'g-batbayar', displayName: 'Г.Батбаяр', photo: placeholder(200, 320, 320), role: 'УИХ-ын гишүүн', party: PARTIES[0]!, constituency: 'Сэлэнгэ аймаг, 3-р тойрог' },
+  { id: 2, slug: 'd-sarantuya', displayName: 'Д.Сарантуяа', photo: null, role: 'Сангийн сайд', party: PARTIES[1]!, constituency: null },
+  { id: 3, slug: 'ts-oyunbileg', displayName: 'Ц.Оюунбилэг', photo: null, role: 'Улсын Их Хурлын Төсвийн байнгын хорооны дарга, УИХ-ын гишүүн', party: PARTIES[3]!, constituency: 'Өвөрхангай аймаг, 9-р тойрог' },
 ];
 
 export const TAGS = [

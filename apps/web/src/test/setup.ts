@@ -6,7 +6,13 @@ import { afterEach, vi } from 'vitest';
 const navigation = vi.hoisted(() => ({ pathname: '/' }));
 vi.mock('next/navigation', () => ({
   usePathname: () => navigation.pathname,
+  notFound: () => {
+    throw new Error('NEXT_NOT_FOUND');
+  },
 }));
+
+// `server-only` throws outside React Server Components; tests import server modules directly.
+vi.mock('server-only', () => ({}));
 
 /** Change what `usePathname()` returns in a test. */
 export function setPathname(pathname: string) {

@@ -87,8 +87,8 @@ pnpm -F @news/api build && pnpm -F @news/api start
 | `RATE_LIMIT_MAX` | `300` | Global per-IP requests per window |
 | `RATE_LIMIT_WINDOW` | `1 minute` | |
 | `WORKERS_ENABLED` | `true` | Run BullMQ workers in this process |
-| `WEB_REVALIDATE_URL` | — | Optional; revalidate jobs skip when unset |
-| `WEB_REVALIDATE_SECRET` | — | ≥ 32 chars; required when `WEB_REVALIDATE_URL` is set |
+| `WEB_REVALIDATE_URL` | — | The web's `/api/revalidate` (e.g. `http://localhost:3000/api/revalidate`). Optional; revalidate jobs skip when unset |
+| `WEB_REVALIDATE_SECRET` | — | ≥ 32 chars; required when `WEB_REVALIDATE_URL` is set. Must equal the web's `WEB_REVALIDATE_SECRET` |
 | `MEDIA_PUBLIC_BASE_URL` | — | Public bucket base URL; media URLs are `null` without it. Required in production |
 | `S3_ENDPOINT` | — | R2: `https://<account>.r2.cloudflarestorage.com`; local: `http://localhost:8333` |
 | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | — | Storage credentials |

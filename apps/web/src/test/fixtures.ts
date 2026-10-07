@@ -33,6 +33,7 @@ export const party: PartyRef = { slug: 'mpp', nameMn: 'Монгол Ардын �
 
 export function personCard(overrides: Partial<PersonCardData> = {}): PersonCardData {
   return {
+    id: 12,
     slug: 'g-batbayar',
     displayName: 'Г.Батбаяр',
     photo: null,
