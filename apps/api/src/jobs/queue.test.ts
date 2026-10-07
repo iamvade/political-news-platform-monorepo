@@ -66,13 +66,14 @@ describe('createBullJobs (BullMQ)', () => {
     expect(await scheduled.getDelayedCount()).toBe(0);
   });
 
-  it('enqueuePublished adds revalidate, push and search-index jobs; enqueueChanged skips push', async () => {
+  it('enqueuePublished adds revalidate, push and search-index jobs; enqueueChanged skips push; enqueueHomepageChanged only revalidates', async () => {
     await jobs.enqueuePublished({ id: 5, isBreaking: true });
     await jobs.enqueueChanged(5);
+    await jobs.enqueueHomepageChanged();
 
     const counts = await Promise.all(effectQueues.map((q) => q.getWaitingCount()));
     expect(Object.fromEntries(effectQueues.map((q, i) => [q.name, counts[i]]))).toEqual({
-      [QUEUES.revalidate]: 2,
+      [QUEUES.revalidate]: 3,
       [QUEUES.push]: 1,
       [QUEUES.searchIndex]: 2,
     });

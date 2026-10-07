@@ -1,4 +1,18 @@
-import { ARTICLE_STATUSES, BILL_STATUSES, ErrorCode, MEDIA_STATUSES, ORGANIZATION_TYPES, USER_ROLES } from '@news/shared/schemas';
+import {
+  ARTICLE_STATUSES,
+  BILL_INITIATORS,
+  BILL_STAGES,
+  BILL_STATUSES,
+  CORRECTION_ENTITY_TYPES,
+  ErrorCode,
+  GENDERS,
+  MEDIA_STATUSES,
+  ORGANIZATION_TYPES,
+  PROMISE_STATUSES,
+  SPONSOR_ROLES,
+  USER_ROLES,
+  VOTE_VALUES,
+} from '@news/shared/schemas';
 import { describe, expect, it } from 'vitest';
 import mn from './locales/mn.json';
 import { SECTIONS } from './navigation';
@@ -17,6 +31,13 @@ describe('Mongolian strings', () => {
       ...BILL_STATUSES.map((s) => `status.bill.${s}`),
       ...MEDIA_STATUSES.map((s) => `status.media.${s}`),
       ...ORGANIZATION_TYPES.map((s) => `status.organizationType.${s}`),
+      ...BILL_STAGES.map((s) => `status.billStage.${s}`),
+      ...BILL_INITIATORS.map((s) => `status.billInitiator.${s}`),
+      ...SPONSOR_ROLES.map((s) => `status.sponsorRole.${s}`),
+      ...VOTE_VALUES.map((s) => `status.vote.${s}`),
+      ...PROMISE_STATUSES.map((s) => `status.promise.${s}`),
+      ...CORRECTION_ENTITY_TYPES.map((s) => `status.correctionEntity.${s}`),
+      ...GENDERS.map((s) => `status.gender.${s}`),
       ...USER_ROLES.map((r) => `roles.${r}`),
       ...SECTIONS.map((s) => `nav.${s.key}`),
     ];

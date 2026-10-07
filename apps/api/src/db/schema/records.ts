@@ -16,6 +16,7 @@ import {
 import { fk, id, sourceUrl, sourceUrlCheck, timestamps } from '../columns';
 import { articles } from './articles';
 import { organizations, persons } from './people';
+import { users } from './users';
 
 export const promiseStatus = pgEnum('promise_status', PROMISE_STATUSES);
 
@@ -64,6 +65,33 @@ export const promises = pgTable(
     index('promises_status_idx').on(t.status),
     check('promises_one_subject', sql`num_nonnulls(${t.personId}, ${t.organizationId}) = 1`),
     sourceUrlCheck('promises', t.sourceUrl),
+  ],
+);
+
+/**
+ * Dated status decisions on a promise (PRD promise_update). The latest one is mirrored in `promises.status`.
+ * Written only by POST /promises/:id/status; the note explains the decision and `source_url` is the evidence.
+ */
+export const promiseUpdates = pgTable(
+  'promise_updates',
+  {
+    id: id(),
+    promiseId: fk()
+      .notNull()
+      .references(() => promises.id, { onDelete: 'cascade' }),
+    status: promiseStatus().notNull(),
+    date: date().notNull(),
+    noteMn: text().notNull(),
+    ...sourceUrl,
+    createdBy: fk()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    ...timestamps,
+  },
+  (t) => [
+    index('promise_updates_promise_id_date_idx').on(t.promiseId, t.date),
+    index('promise_updates_created_by_idx').on(t.createdBy),
+    sourceUrlCheck('promise_updates', t.sourceUrl),
   ],
 );
 

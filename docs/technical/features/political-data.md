@@ -2,7 +2,9 @@
 
 ## Overview
 
-**Built (API).** Data editors maintain persons, organizations, positions, bills (+ sponsors), bill stages, votes, statements, promises, declarations and corrections. Every change is audited. Votes and positions can be bulk-imported from JSON with a dry-run diff.
+**Built (API + admin screens).** Data editors maintain persons, organizations, positions, bills (+ sponsors), bill stages, votes, statements, promises (with a dated status history), declarations and corrections. Every change is audited. Votes and positions can be bulk-imported from JSON with a dry-run diff.
+
+The admin has screens for persons, bills (with a vote-entry grid), promises and corrections ([admin](../projects/admin.md#political-data-screens)). Organizations still have only a list.
 
 ## How it works
 
@@ -19,13 +21,38 @@ Each resource has `GET /` (paginated), `GET /:id`, `POST /` (201), `PATCH /:id`,
 | `/bill-stages` | `billId` | hard (admin) |
 | `/votes` | `billId`, `personId`, `date`, `motion` | hard (admin) |
 | `/statements` | `personId`, `articleId` | hard (admin) |
-| `/promises` | `personId`, `organizationId`, `status` | hard (admin) |
+| `/promises` (+ `POST /promises/:id/status`, `GET /promises/:id/updates`) | `personId`, `organizationId`, `status` | hard (admin) |
 | `/declarations` | `personId`, `year` | hard (admin) |
 | `/corrections` | `entityType`, `entityId` | hard (admin) |
 
 - Slugs for persons (`Г.Батбаяр` → `g-batbayar`), organizations and bills are generated when omitted, with `-2`… on collision.
 - Soft-deleted rows return 404 and disappear from lists and every public route.
 - Validation lives in the shared Zod schemas (http(s) `source_url`, ordered dates, exactly one promise subject, decimal-string amounts); the DB constraints are the backstop.
+
+### Promise status history
+
+- **Status is never set on create or update.** The `status` field is `z.never()` in both bodies, so sending it returns 400 `VALIDATION_ERROR`. New promises start as `not_rated`.
+- **Changing the status** goes through `POST /v1/admin/promises/:id/status` with `{ status, date, noteMn, sourceUrl }`. All four are required, and the URL is the evidence.
+- In one transaction it:
+  - locks the promise
+  - inserts a `promise_updates` row (`created_by` = the user)
+  - mirrors `status` on the promise
+  - sets `last_reviewed_at = now()`
+  - writes an audit row (`diff.status` plus `diff.promiseUpdate`)
+- Sending the same status again is allowed. It records a dated review that confirmed it.
+- `GET /promises/:id/updates` lists the history, newest first.
+- The `evidence` jsonb array on the promise stays as a general list of supporting links.
+
+### Vote entry (roster and sessions)
+
+- **`GET /v1/admin/bills/:id/vote-roster?date=&motion=`** returns everyone the grid should list for that roll call:
+  - **MPs serving on `date`**: an open-on-that-date position at an organization of type `parliament` (party-list seats) or `constituency`. Committee seats don't count. Ended seats, soft-deleted people and soft-deleted organizations are excluded.
+  - Each person's **party on that date** (short name).
+  - Their recorded vote for (bill, date, motion), if any.
+  - Anyone who has a vote recorded but held no seat that day is appended with `inOffice: false`, so no recorded vote is hidden.
+- **`GET /v1/admin/bills/:id/vote-sessions`** lists one entry per `(date, motion)`, newest first, with `counts` per value, `total` and the distinct `sourceUrls`.
+- **Saving the grid** reuses the votes import (`personId` rows, one source URL for all rows): a dry run first for the "N new, M changed" confirmation, then the commit. Like every import it never deletes. A recorded vote can be changed but not removed from the grid; deleting one is the admin-only `DELETE /votes/:id`.
+- Code: `modules/legislation/vote-entry.ts`.
 
 ### Audit log
 
@@ -74,11 +101,13 @@ curl -b jar -H 'origin: http://localhost:4000' -H "x-csrf-token: $CSRF" -H 'cont
 - There is deliberately **no generic CRUD factory**; routes and services are explicit per resource (CLAUDE.md: boring, explicit code).
 - Re-running an import with no changes still writes an audit row (records that the import ran).
 - No route restores soft-deleted persons/organizations yet.
+- "Who is an MP" is derived (open position at a `parliament`/`constituency` organization). There is no MP flag. A seat entered on the wrong organization type will be missing from the vote grid.
+- Promise statuses in code (`kept`, `in_progress`, `broken`, `not_rated`) differ from the six in PRD §6.1. Existing rows keep their status but have no history before migration 0006.
 - Organization members (public) are sorted alphabetically by title, so "Гишүүн" lists before "Дарга"; ranking leadership needs an agreed title order.
 
 ## Key files
 
-`apps/api/src/modules/{people,legislation,records,corrections}/`, `apps/api/src/lib/{audit,crud,db-errors,imports,slugs}.ts`, `apps/api/src/db/schema/audit.ts`, `packages/shared/src/schemas/{people,legislation,records,corrections,imports}.ts`.
+`apps/api/src/modules/{people,legislation,records,corrections}/` (incl. `legislation/vote-entry.ts`), `apps/api/src/lib/{audit,crud,db-errors,imports,slugs}.ts`, `apps/api/src/db/schema/audit.ts`, `packages/shared/src/schemas/{people,legislation,records,corrections,imports}.ts`.
 
 ---
-Last updated: 2026-10-07 — initial version.
+Last updated: 2026-10-07 — promise status history (`promise_updates`, status endpoint), vote roster and sessions, admin screens.

@@ -32,6 +32,8 @@ export interface DataTableProps<T> {
   onRetry: () => void;
   list: ListParamsApi;
   searchPlaceholder?: string;
+  /** False for endpoints without a `search` parameter (hides the search box). */
+  searchable?: boolean;
   filters?: FilterDef[];
   getRowId?: (row: T) => string;
 }
@@ -77,6 +79,7 @@ export function DataTable<T>({
   onRetry,
   list,
   searchPlaceholder,
+  searchable = true,
   filters = [],
   getRowId,
 }: DataTableProps<T>) {
@@ -99,7 +102,7 @@ export function DataTable<T>({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <SearchBox value={params.search} placeholder={searchPlaceholder ?? t('table.search')} onCommit={list.setSearch} />
+        {searchable && <SearchBox value={params.search} placeholder={searchPlaceholder ?? t('table.search')} onCommit={list.setSearch} />}
         {filters.map((filter) =>
           filter.type === 'select' ? (
             <Select

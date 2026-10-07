@@ -6,7 +6,7 @@ import { processRevalidate } from './processors/revalidate';
 import { processScheduledPublish, sweepScheduled } from './processors/scheduled-publish';
 import { processSearchIndex } from './processors/search-index';
 import { createBullConnection } from './queue';
-import { MEDIA_VARIANT_ATTEMPTS, QUEUES, type ArticleJobData, type MediaJobData, type ScheduledPublishJobData } from './types';
+import { MEDIA_VARIANT_ATTEMPTS, QUEUES, type ArticleJobData, type MediaJobData, type RevalidateJobData, type ScheduledPublishJobData } from './types';
 
 const SWEEP_SCHEDULER_ID = 'sweep-scheduled';
 const SWEEP_EVERY_MS = 60_000;
@@ -42,7 +42,7 @@ export async function registerWorkers(app: FastifyInstance): Promise<void> {
         job.name === 'sweep' ? sweepScheduled(deps) : processScheduledPublish(deps, job.data as ScheduledPublishJobData),
       { connection },
     ),
-    new Worker(QUEUES.revalidate, (job: Job<ArticleJobData>) => processRevalidate({ env: app.env, log: app.log }, job.data), {
+    new Worker(QUEUES.revalidate, (job: Job<RevalidateJobData>) => processRevalidate({ env: app.env, log: app.log }, job.data), {
       connection,
     }),
     new Worker(QUEUES.push, (job: Job<ArticleJobData>) => processPush(deps, job.data), { connection }),

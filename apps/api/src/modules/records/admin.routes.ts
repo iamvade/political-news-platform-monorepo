@@ -3,6 +3,7 @@ import {
   adminDeclarationResponseSchema,
   adminPromiseListResponseSchema,
   adminPromiseResponseSchema,
+  adminPromiseUpdateListResponseSchema,
   adminStatementListResponseSchema,
   adminStatementResponseSchema,
   createDeclarationBodySchema,
@@ -10,6 +11,8 @@ import {
   createStatementBodySchema,
   declarationListQuerySchema,
   idParamsSchema,
+  paginationQuerySchema,
+  promiseStatusChangeBodySchema,
   promiseListQuerySchema,
   statementListQuerySchema,
   updateDeclarationBodySchema,
@@ -63,6 +66,32 @@ export const recordsAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.patch('/promises/:id', { onRequest: dataRoles, schema: { tags: promiseTags, security: csrfSecurity, params: idParamsSchema, body: updatePromiseBodySchema, response: { 200: adminPromiseResponseSchema, ...errors } } }, async (request) => ({
     data: await service.updatePromise(db, currentUser(request), request.params.id, request.body),
   }));
+  app.post(
+    '/promises/:id/status',
+    {
+      onRequest: dataRoles,
+      schema: {
+        tags: promiseTags,
+        summary: 'Change the status with a dated note and evidence URL (the only way to change status)',
+        security: csrfSecurity,
+        params: idParamsSchema,
+        body: promiseStatusChangeBodySchema,
+        response: { 200: adminPromiseResponseSchema, ...errors },
+      },
+    },
+    async (request) => ({ data: await service.changePromiseStatus(db, currentUser(request), request.params.id, request.body) }),
+  );
+  app.get(
+    '/promises/:id/updates',
+    {
+      onRequest: dataRoles,
+      schema: { tags: promiseTags, summary: 'Status history, newest first', params: idParamsSchema, querystring: paginationQuerySchema, response: { 200: adminPromiseUpdateListResponseSchema, ...errors } },
+    },
+    async (request) => {
+      const { items, total } = await service.listPromiseUpdates(db, request.params.id, request.query);
+      return paginate(items, total, request.query.page, request.query.pageSize);
+    },
+  );
   app.delete('/promises/:id', { onRequest: adminOnly, schema: { tags: promiseTags, summary: 'Hard delete (admin only)', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
     await service.deletePromise(db, currentUser(request), request.params.id);
     return reply.code(204).send();

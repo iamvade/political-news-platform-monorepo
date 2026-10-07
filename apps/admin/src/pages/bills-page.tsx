@@ -1,9 +1,12 @@
 import { BILL_STATUSES, billStatusSchema, type AdminBill } from '@news/shared/schemas';
 import { createColumnHelper } from '@tanstack/react-table';
+import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { DataTable, useListParams, useListQuery, type FilterDef } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/format';
@@ -26,7 +29,14 @@ export function BillsPage() {
 
   const columns = useMemo(
     () => [
-      column.accessor('titleMn', { header: t('pages.bills.columns.title'), cell: (info) => <span className="font-medium">{info.getValue()}</span> }),
+      column.accessor('titleMn', {
+        header: t('pages.bills.columns.title'),
+        cell: (info) => (
+          <Link to={`/bills/${info.row.original.id}`} className="font-medium hover:underline">
+            {info.getValue()}
+          </Link>
+        ),
+      }),
       column.accessor('registrationNumber', { header: t('pages.bills.columns.registrationNumber'), cell: (info) => info.getValue() ?? '—' }),
       column.accessor('status', { header: t('pages.bills.columns.status'), cell: (info) => <StatusBadge group="bill" value={info.getValue()} /> }),
       column.accessor('submittedOn', { header: t('pages.bills.columns.submittedOn'), cell: (info) => formatDate(info.getValue()) }),
@@ -45,7 +55,17 @@ export function BillsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('pages.bills.title')} />
+      <PageHeader
+        title={t('pages.bills.title')}
+        actions={
+          <Button asChild>
+            <Link to="/bills/new">
+              <Plus aria-hidden />
+              {t('bills.new')}
+            </Link>
+          </Button>
+        }
+      />
       <DataTable
         columns={columns}
         rows={query.rows}

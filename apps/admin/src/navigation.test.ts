@@ -6,8 +6,8 @@ describe('navigation', () => {
   it.each<[UserRole, string[]]>([
     ['reporter', ['articles', 'media']],
     ['editor', ['articles', 'media', 'homepage']],
-    ['data_editor', ['persons', 'organizations', 'bills', 'media']],
-    ['admin', ['articles', 'persons', 'organizations', 'bills', 'media', 'homepage', 'users']],
+    ['data_editor', ['persons', 'organizations', 'bills', 'promises', 'corrections', 'media']],
+    ['admin', ['articles', 'persons', 'organizations', 'bills', 'promises', 'corrections', 'media', 'homepage', 'users']],
   ])('%s sees %j', (role, keys) => {
     expect(visibleSections(role).map((s) => s.key)).toEqual(keys);
   });

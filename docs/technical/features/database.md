@@ -64,6 +64,8 @@ A person's current party, seat and ministry are their `positions` with `end_date
 | `0003_audit_log` | `audit_log` table + indexes |
 | `0004_media_pipeline` | `media.status` / `original_filename` / `processing_error`; trigram indexes on alt/credit; **hand-added** backfill `UPDATE media SET status = 'ready'` |
 | `0005_revision_kind_autosave` | `ALTER TYPE revision_kind ADD VALUE 'autosave'` (editor autosaves; see [articles](articles.md#saving-autosave-and-conflicts)). Postgres cannot drop an enum value, so rolling back means a new migration that rebuilds the type. |
+| `0006_promise_updates` | `promise_updates` (promise CASCADE, `status`, `date`, `note_mn`, `source_url` + http CHECK, `created_by` RESTRICT, timestamps; index `(promise_id, date)`) |
+| `0007_homepage_layouts` | `homepage_layouts` (`zones jsonb`, `created_by` RESTRICT, timestamps). Append-only: the highest id is live |
 
 ### Seed (`db/seeder.ts`)
 
@@ -101,4 +103,4 @@ Tests: `resetDb()` truncates every public table between tests; `seeder.test.ts` 
 `apps/api/src/db/{client,columns,migrator,migrate,seeder,seed}.ts`, `apps/api/src/db/schema/*.ts`, `apps/api/drizzle/`, `apps/api/drizzle.config.ts`, `docker/postgres/init.sql`.
 
 ---
-Last updated: 2026-10-07 — migration 0005 (`autosave` revision kind).
+Last updated: 2026-10-07 — migrations 0005 (`autosave` revision kind), 0006 (`promise_updates`), 0007 (`homepage_layouts`).

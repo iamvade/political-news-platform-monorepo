@@ -8,6 +8,7 @@
 
 | Route | Returns | Cache preset |
 |---|---|---|
+| `GET /homepage` | The live layout resolved for readers: `hero`, `featured` (4), `sections` (`[{ category, articles }]`, 6 each), `updatedAt`. See [homepage](homepage.md) | news |
 | `GET /articles?category=&tag=&page=&pageSize=` | Published articles, newest first | news |
 | `GET /articles/:slug` | Article with `bodyHtml`, `bodyJson`, author name, category, tags, persons, organizations, bills, public corrections. `bodyHtml` may contain `<figure>`/`<figcaption>` and **allowlisted iframes** (`www.youtube-nocookie.com/embed/…`, `www.facebook.com/plugins/{post,video}.php`). The web renders embeds from `bodyJson` as click-to-load cards instead of using these iframes ([web](../projects/web.md#notables)) | news |
 | `GET /categories/:slug`, `GET /tags/:slug` | The category/tag | news |
@@ -63,4 +64,4 @@ curl -s localhost:4000/v1/public/bills/tax-general-law-amendment-2025 | jq '.dat
 `apps/api/src/modules/{articles,taxonomy,people,legislation}/public.*.ts`, `apps/api/src/lib/{cache,media}.ts`, `packages/shared/src/schemas/public.ts`.
 
 ---
-Last updated: 2026-10-07 — `bodyHtml` can contain figures and allowlisted embed iframes; web renders embeds click-to-load.
+Last updated: 2026-10-07 — `/homepage`; `bodyHtml` can contain figures and allowlisted embed iframes; web renders embeds click-to-load.

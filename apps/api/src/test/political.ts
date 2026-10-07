@@ -112,8 +112,8 @@ export const RESOURCES: ResourceSpec[] = [
     entityType: 'promise',
     softDelete: false,
     create: (r) => ({ personId: r.personA.id, textMn: 'Татварыг цахимжуулна.', madeOn: '2024-06-10', sourceUrl: SRC }),
-    update: { status: 'kept', evidence: [{ url: SRC, label: 'Хууль батлагдсан', date: '2025-04-17' }] },
-    filter: (r) => `personId=${r.personA.id}&status=kept`,
+    update: { textMn: 'Татварыг бүрэн цахимжуулна.', evidence: [{ url: SRC, label: 'Хууль батлагдсан', date: '2025-04-17' }] },
+    filter: (r) => `personId=${r.personA.id}&status=not_rated`,
   },
   {
     name: 'declarations',

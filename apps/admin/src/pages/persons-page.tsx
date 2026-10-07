@@ -1,10 +1,13 @@
 import type { AdminPerson } from '@news/shared/schemas';
 import { createColumnHelper } from '@tanstack/react-table';
+import { Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { DataTable, useListParams, useListQuery, type FilterDef } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { useSession } from '@/lib/session';
@@ -34,7 +37,13 @@ export function PersonsPage() {
         header: t('pages.persons.columns.name'),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <span className="font-medium">{row.original.displayName}</span>
+            {row.original.deletedAt ? (
+              <span className="font-medium">{row.original.displayName}</span>
+            ) : (
+              <Link to={`/persons/${row.original.id}`} className="font-medium hover:underline">
+                {row.original.displayName}
+              </Link>
+            )}
             <span className="text-muted-foreground">
               {row.original.patronymicMn} {row.original.givenNameMn}
             </span>
@@ -52,7 +61,17 @@ export function PersonsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('pages.persons.title')} />
+      <PageHeader
+        title={t('pages.persons.title')}
+        actions={
+          <Button asChild>
+            <Link to="/persons/new">
+              <Plus aria-hidden />
+              {t('persons.new')}
+            </Link>
+          </Button>
+        }
+      />
       <DataTable
         columns={columns}
         rows={query.rows}

@@ -15,7 +15,7 @@ How the platform is built, how to run it, and how to keep it healthy. The produc
 |---|---|---|
 | `apps/api` — Fastify API + BullMQ workers | **Built** | [projects/api.md](projects/api.md) |
 | `packages/shared` — Zod contracts, content renderer, translit, API client | **Built** | [projects/shared.md](projects/shared.md) |
-| `apps/admin` — newsroom SPA (React + Vite + shadcn/ui) | **Shell + article editor built** (login, nav, list pages, Tiptap editor) | [projects/admin.md](projects/admin.md) |
+| `apps/admin` — newsroom SPA (React + Vite + shadcn/ui) | **Built** (article editor, political data screens, homepage editor; organizations and users screens pending) | [projects/admin.md](projects/admin.md) |
 | `apps/web` — public site (Next.js) | Scaffold | [projects/web.md](projects/web.md) |
 | `apps/mobile` — app (Expo) | Scaffold | [projects/mobile.md](projects/mobile.md) |
 
@@ -27,9 +27,10 @@ How the platform is built, how to run it, and how to keep it healthy. The produc
 | Admin authentication, sessions, CSRF, roles | [features/auth.md](features/auth.md) |
 | Articles: workflow, revisions, autosave, conflicts, links, embeds, sanitized HTML | [features/articles.md](features/articles.md) |
 | Background jobs (BullMQ) | [features/jobs.md](features/jobs.md) |
-| Political data: admin CRUD, audit log, bulk imports | [features/political-data.md](features/political-data.md) |
+| Political data: admin CRUD and screens, promise history, vote entry, audit log, bulk imports | [features/political-data.md](features/political-data.md) |
 | Public read API and caching | [features/public-api.md](features/public-api.md) |
 | Media: uploads, WebP variants, library | [features/media.md](features/media.md) |
+| Homepage layout: editor curation, versions, public endpoint | [features/homepage.md](features/homepage.md) |
 
 ## Architecture
 
@@ -69,7 +70,7 @@ flowchart LR
 
 ```
 apps/api/            Fastify API, Drizzle schema + migrations, BullMQ jobs, CLIs
-apps/admin/          Newsroom SPA (shell, list pages, article editor)
+apps/admin/          Newsroom SPA (article editor, political data, homepage)
 apps/web/            Public Next.js site (scaffold)
 apps/mobile/         Expo app (scaffold)
 packages/shared/     Zod schemas, content renderer, translit, API client
@@ -98,4 +99,4 @@ End each page with `Last updated: YYYY-MM-DD — <what changed>`.
 Any change that affects behaviour, setup, env vars, routes, schema, jobs, dependencies or a gotcha updates the matching page **in the same change** (see the Documentation section of `CLAUDE.md`). New project or feature → new page from the template, linked above. Describe what **is**; plans belong in the PRD or under "Notables → follow-ups".
 
 ---
-Last updated: 2026-10-07 — admin status: article editor built.
+Last updated: 2026-10-07 — homepage feature page; admin status.

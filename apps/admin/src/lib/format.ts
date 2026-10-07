@@ -19,3 +19,10 @@ export function formatBytes(bytes: number | null | undefined): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+const mnt = new Intl.NumberFormat('mn-MN', { maximumFractionDigits: 2 });
+
+/** MNT decimal string (e.g. "125000000.00") → grouped number. Strings keep full precision (no float rounding). */
+export function formatMnt(value: string | null | undefined): string {
+  return value === null || value === undefined ? '—' : mnt.format(value as Intl.StringNumericLiteral);
+}

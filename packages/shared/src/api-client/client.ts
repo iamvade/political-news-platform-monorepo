@@ -12,6 +12,7 @@ import {
   type UpdateArticleBody,
 } from '../schemas/articles';
 import { errorResponseSchema, noContentSchema } from '../schemas/common';
+import * as home from '../schemas/homepage';
 import * as corr from '../schemas/corrections';
 import { importResultResponseSchema, type PositionImportBody, type VoteImportBody } from '../schemas/imports';
 import * as leg from '../schemas/legislation';
@@ -208,6 +209,11 @@ export function createApiClient(options: ApiClientOptions) {
         ),
         replaceSponsors: (id: number, body: leg.ReplaceSponsorsBody, call?: CallOptions) =>
           request(`/v1/admin/bills/${id}/sponsors`, { method: 'PUT', body, schema: leg.adminBillResponseSchema, ...call }),
+        /** MPs serving on `date` with their recorded votes for (bill, date, motion). Save with `import.votes`. */
+        voteRoster: (id: number, query: leg.VoteRosterQuery, call?: CallOptions) =>
+          request(`/v1/admin/bills/${id}/vote-roster`, { query, schema: leg.voteRosterResponseSchema, ...call }),
+        voteSessions: (id: number, q?: { page?: number; pageSize?: number }, call?: CallOptions) =>
+          request(`/v1/admin/bills/${id}/vote-sessions`, { query: page(q), schema: leg.voteSessionListResponseSchema, ...call }),
       },
       billStages: adminResource<
         typeof leg.adminBillStageResponseSchema,
@@ -226,12 +232,19 @@ export function createApiClient(options: ApiClientOptions) {
         rec.CreateStatementBody,
         rec.UpdateStatementBody
       >('/v1/admin/statements', rec.adminStatementResponseSchema, rec.adminStatementListResponseSchema),
-      promises: adminResource<
-        typeof rec.adminPromiseResponseSchema,
-        typeof rec.adminPromiseListResponseSchema,
-        rec.CreatePromiseBody,
-        rec.UpdatePromiseBody
-      >('/v1/admin/promises', rec.adminPromiseResponseSchema, rec.adminPromiseListResponseSchema),
+      promises: {
+        ...adminResource<
+          typeof rec.adminPromiseResponseSchema,
+          typeof rec.adminPromiseListResponseSchema,
+          rec.CreatePromiseBody,
+          rec.UpdatePromiseBody
+        >('/v1/admin/promises', rec.adminPromiseResponseSchema, rec.adminPromiseListResponseSchema),
+        /** The only way to change status: records a dated note and evidence URL. */
+        changeStatus: (id: number, body: rec.PromiseStatusChangeBody, call?: CallOptions) =>
+          request(`/v1/admin/promises/${id}/status`, { method: 'POST', body, schema: rec.adminPromiseResponseSchema, ...call }),
+        updates: (id: number, q?: { page?: number; pageSize?: number }, call?: CallOptions) =>
+          request(`/v1/admin/promises/${id}/updates`, { query: page(q), schema: rec.adminPromiseUpdateListResponseSchema, ...call }),
+      },
       declarations: adminResource<
         typeof rec.adminDeclarationResponseSchema,
         typeof rec.adminDeclarationListResponseSchema,
@@ -298,12 +311,23 @@ export function createApiClient(options: ApiClientOptions) {
           ...call,
         }),
     },
+    /** Homepage layout (editor, admin). Saving creates a new live version. */
+    homepage: {
+      get: (call?: CallOptions) => request('/v1/admin/homepage', { schema: home.adminHomepageResponseSchema, ...call }),
+      save: (body: home.SaveHomepageBody, call?: CallOptions) =>
+        request('/v1/admin/homepage', { method: 'PUT', body, schema: home.adminHomepageResponseSchema, ...call }),
+      versions: (q?: { page?: number; pageSize?: number }, call?: CallOptions) =>
+        request('/v1/admin/homepage/versions', { query: page(q), schema: home.homepageVersionListResponseSchema, ...call }),
+    },
     taxonomy: {
       createTag: (body: CreateTagBody, call?: CallOptions) =>
         request('/v1/admin/tags', { method: 'POST', body, schema: taxonomyItemResponseSchema, ...call }),
     },
     /** Unauthenticated, CDN-cached reads for web and mobile. */
     public: {
+      homepage: {
+        get: (call?: CallOptions) => request('/v1/public/homepage', { schema: pub.publicHomepageResponseSchema, ...call }),
+      },
       articles: {
         list: (query: { category?: string; tag?: string; page?: number; pageSize?: number } = {}, call?: CallOptions) =>
           request('/v1/public/articles', { query, schema: pub.publicArticleListResponseSchema, ...call }),

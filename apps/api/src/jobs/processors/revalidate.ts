@@ -1,6 +1,6 @@
 import type { FastifyBaseLogger } from 'fastify';
 import type { Env } from '../../config/env';
-import type { ArticleJobData } from '../types';
+import type { RevalidateJobData } from '../types';
 
 export interface RevalidateDeps {
   env: Pick<Env, 'WEB_REVALIDATE_URL' | 'WEB_REVALIDATE_SECRET'>;
@@ -8,18 +8,22 @@ export interface RevalidateDeps {
   fetch?: typeof fetch;
 }
 
-/** Asks the Next.js site to revalidate the article and the home page. Throws on failure so BullMQ retries. */
-export async function processRevalidate(deps: RevalidateDeps, data: ArticleJobData): Promise<'sent' | 'skipped'> {
+/** Cache tags for a job: an article's page plus home, or the explicit list. */
+export const revalidateTags = (data: RevalidateJobData): string[] => ('tags' in data ? data.tags : [`article:${data.articleId}`, 'home']);
+
+/** Asks the Next.js site to revalidate the given tags. Throws on failure so BullMQ retries. */
+export async function processRevalidate(deps: RevalidateDeps, data: RevalidateJobData): Promise<'sent' | 'skipped'> {
   const { WEB_REVALIDATE_URL: url, WEB_REVALIDATE_SECRET: secret } = deps.env;
+  const tags = revalidateTags(data);
   if (!url || !secret) {
-    deps.log.info({ articleId: data.articleId }, 'Revalidate skipped (WEB_REVALIDATE_URL not configured)');
+    deps.log.info({ tags }, 'Revalidate skipped (WEB_REVALIDATE_URL not configured)');
     return 'skipped';
   }
 
   const res = await (deps.fetch ?? fetch)(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-revalidate-secret': secret },
-    body: JSON.stringify({ tags: [`article:${data.articleId}`, 'home'] }),
+    body: JSON.stringify({ tags }),
     signal: AbortSignal.timeout(10_000),
   });
   if (!res.ok) throw new Error(`Revalidate failed with HTTP ${res.status}`);

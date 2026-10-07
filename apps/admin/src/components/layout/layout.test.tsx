@@ -16,8 +16,8 @@ describe('role-aware sidebar', () => {
   it.each<[UserRole, string[]]>([
     ['reporter', ['Нийтлэл', 'Медиа']],
     ['editor', ['Нийтлэл', 'Медиа', 'Нүүр хуудас']],
-    ['data_editor', ['Хүмүүс', 'Байгууллага', 'Хуулийн төсөл', 'Медиа']],
-    ['admin', ['Нийтлэл', 'Хүмүүс', 'Байгууллага', 'Хуулийн төсөл', 'Медиа', 'Нүүр хуудас', 'Хэрэглэгчид']],
+    ['data_editor', ['Хүмүүс', 'Байгууллага', 'Хуулийн төсөл', 'Амлалт', 'Залруулга', 'Медиа']],
+    ['admin', ['Нийтлэл', 'Хүмүүс', 'Байгууллага', 'Хуулийн төсөл', 'Амлалт', 'Залруулга', 'Медиа', 'Нүүр хуудас', 'Хэрэглэгчид']],
   ])('%s sees only their sections', async (role, labels) => {
     mockApi({ 'GET /v1/admin/auth/me': () => session(role), 'GET /v1/admin/media': () => page([]) });
     renderApp('/media');
@@ -35,7 +35,7 @@ describe('role-aware sidebar', () => {
 
   it('sections without an API show the not-built page', async () => {
     mockApi({ 'GET /v1/admin/auth/me': () => session('admin') });
-    renderApp('/homepage');
+    renderApp('/users');
 
     expect(await screen.findByText('Энэ хэсэг хараахан бэлэн болоогүй')).toBeInTheDocument();
   });

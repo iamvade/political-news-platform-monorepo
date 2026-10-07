@@ -110,7 +110,7 @@ If a script is missing, add it in the same style. Do not invent alternative scri
 - **Soft delete:** `deleted_at timestamptz` on `persons`, `organizations`, `articles` and `media`. Services must exclude soft-deleted rows by default; hard delete is admin-only and audited.
 - **Money and asset figures:** `numeric` (MNT), never float.
 - **Translatable fields:** `name_mn` (not null) and `name_en` (nullable).
-- **Provenance:** factual tables (`positions`, `bills`, `bill_stages`, `votes`, `statements`, `promises`, `declarations`) require `source_url text not null` plus a `^https?://` CHECK (use `sourceUrl` / `sourceUrlCheck` from `db/columns.ts`).
+- **Provenance:** factual tables (`positions`, `bills`, `bill_stages`, `votes`, `statements`, `promises`, `promise_updates`, `declarations`) require `source_url text not null` plus a `^https?://` CHECK (use `sourceUrl` / `sourceUrlCheck` from `db/columns.ts`).
 - **Rich text:** article bodies are stored as `jsonb` (ProseMirror) and validated with `@news/shared/content` before insert.
 - **Queries:** add indexes for every FK and every filter or sort used by a list endpoint. Use transactions for multi-table writes.
 

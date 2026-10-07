@@ -1,6 +1,6 @@
 import { ErrorCode, personDisplayName, type PublicArticle, type PublicArticleSummary } from '@news/shared/schemas';
 import type { ContentDoc } from '@news/shared/content';
-import { and, asc, count, desc, eq, exists, isNull, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, exists, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
 import type { Db } from '../../db/client';
 import {
   articleBills,
@@ -23,8 +23,13 @@ import { toPublicMedia } from '../../lib/media';
 
 export interface ArticleFilter {
   categorySlug?: string;
+  categoryId?: number;
   tagSlug?: string;
   personId?: number;
+  /** Only these articles (homepage pins). */
+  ids?: number[];
+  /** Leave these out (homepage: already shown in hero/featured). */
+  excludeIds?: number[];
   page: number;
   pageSize: number;
 }
@@ -57,7 +62,7 @@ function toSummary(row: SummaryRow, mediaBase: string | undefined): PublicArticl
   };
 }
 
-/** Published articles, newest first, optionally filtered by category slug, tag slug or tagged person. */
+/** Published articles, newest first, optionally filtered by category, tag slug, tagged person or id list. */
 export async function listPublishedArticles(
   db: Db,
   mediaBase: string | undefined,
@@ -65,6 +70,9 @@ export async function listPublishedArticles(
 ): Promise<{ items: PublicArticleSummary[]; total: number }> {
   const conditions: SQL[] = [published()!];
   if (filter.categorySlug) conditions.push(eq(categories.slug, filter.categorySlug));
+  if (filter.categoryId) conditions.push(eq(articles.categoryId, filter.categoryId));
+  if (filter.ids) conditions.push(inArray(articles.id, filter.ids));
+  if (filter.excludeIds?.length) conditions.push(notInArray(articles.id, filter.excludeIds));
   if (filter.tagSlug) {
     conditions.push(
       exists(

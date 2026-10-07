@@ -7,6 +7,7 @@ import {
   type ArticleJobData,
   type Jobs,
   type MediaJobData,
+  type RevalidateJobData,
   type ScheduledPublishJobData,
 } from './types';
 
@@ -26,7 +27,7 @@ export function createBullConnection(redisUrl: string): Redis {
 export function createBullJobs(redisUrl: string): Jobs {
   const connection = createBullConnection(redisUrl);
   const scheduledPublish = new Queue<ScheduledPublishJobData>(QUEUES.scheduledPublish, { connection });
-  const revalidate = new Queue<ArticleJobData>(QUEUES.revalidate, { connection });
+  const revalidate = new Queue<RevalidateJobData>(QUEUES.revalidate, { connection });
   const push = new Queue<ArticleJobData>(QUEUES.push, { connection });
   const searchIndex = new Queue<ArticleJobData>(QUEUES.searchIndex, { connection });
   const mediaVariants = new Queue<MediaJobData>(QUEUES.mediaVariants, { connection });
@@ -68,6 +69,10 @@ export function createBullJobs(redisUrl: string): Jobs {
         revalidate.add('article', data, EFFECT_JOB_OPTIONS),
         searchIndex.add('article', data, EFFECT_JOB_OPTIONS),
       ]);
+    },
+
+    async enqueueHomepageChanged() {
+      await revalidate.add('tags', { tags: ['home'] }, EFFECT_JOB_OPTIONS);
     },
 
     async enqueueMediaVariants(mediaId) {

@@ -11,6 +11,10 @@ import {
   createBillStageBodySchema,
   createVoteBodySchema,
   idParamsSchema,
+  paginationQuerySchema,
+  voteRosterQuerySchema,
+  voteRosterResponseSchema,
+  voteSessionListResponseSchema,
   importResultResponseSchema,
   replaceSponsorsBodySchema,
   updateBillBodySchema,
@@ -24,6 +28,7 @@ import { paginate } from '../../lib/crud';
 import { deleteResponses, adminErrorResponses as errors, currentUser } from '../../lib/routes';
 import { csrfSecurity } from '../../plugins/swagger';
 import { importVotes } from './import';
+import { voteRoster, voteSessions } from './vote-entry';
 import * as service from './service';
 
 const IMPORT_BODY_LIMIT = 5 * 1024 * 1024;
@@ -52,6 +57,31 @@ export const legislationAdminRoutes: FastifyPluginAsyncZod = async (app) => {
   app.put('/bills/:id/sponsors', { onRequest: dataRoles, schema: { tags: billTags, summary: 'Replace the sponsor list', security: csrfSecurity, params: idParamsSchema, body: replaceSponsorsBodySchema, response: { 200: adminBillResponseSchema, ...errors } } }, async (request) => ({
     data: await service.replaceSponsors(db, currentUser(request), request.params.id, request.body),
   }));
+  app.get(
+    '/bills/:id/vote-roster',
+    {
+      onRequest: dataRoles,
+      schema: {
+        tags: ['votes'],
+        summary: 'MPs serving on the date with their recorded votes for (bill, date, motion); save with POST /votes/import',
+        params: idParamsSchema,
+        querystring: voteRosterQuerySchema,
+        response: { 200: voteRosterResponseSchema, ...errors },
+      },
+    },
+    async (request) => ({ data: await voteRoster(db, request.params.id, request.query) }),
+  );
+  app.get(
+    '/bills/:id/vote-sessions',
+    {
+      onRequest: dataRoles,
+      schema: { tags: ['votes'], summary: 'Roll calls on the bill: counts per (date, motion)', params: idParamsSchema, querystring: paginationQuerySchema, response: { 200: voteSessionListResponseSchema, ...errors } },
+    },
+    async (request) => {
+      const { items, total } = await voteSessions(db, request.params.id, request.query);
+      return paginate(items, total, request.query.page, request.query.pageSize);
+    },
+  );
   app.delete('/bills/:id', { onRequest: adminOnly, schema: { tags: billTags, summary: 'Hard delete (admin only); 409 if votes exist', security: csrfSecurity, params: idParamsSchema, response: deleteResponses } }, async (request, reply) => {
     await service.deleteBill(db, currentUser(request), request.params.id);
     return reply.code(204).send();

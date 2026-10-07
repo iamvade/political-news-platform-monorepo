@@ -7,6 +7,8 @@ export interface Jobs {
   enqueuePublished(article: { id: number; isBreaking: boolean }): Promise<void>;
   /** After a published article changes or is unpublished: revalidate pages, search index. */
   enqueueChanged(articleId: number): Promise<void>;
+  /** After a homepage layout is saved: revalidate the home page. */
+  enqueueHomepageChanged(): Promise<void>;
   /** After an upload is confirmed: generate WebP variants. */
   enqueueMediaVariants(mediaId: number): Promise<void>;
   close(): Promise<void>;
@@ -31,6 +33,9 @@ export interface ArticleJobData {
   articleId: number;
   isBreaking?: boolean;
 }
+
+/** Revalidate jobs: an article (its page + home) or explicit cache tags. */
+export type RevalidateJobData = ArticleJobData | { tags: string[] };
 
 export const scheduledPublishJobId = (articleId: number) => `article-${articleId}`;
 
