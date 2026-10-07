@@ -1,6 +1,7 @@
 import type {
   AdminDeclaration,
   AdminPromise,
+  AdminPromiseUpdate,
   AdminStatement,
   AuthUser,
   CreateDeclarationBody,
@@ -9,6 +10,8 @@ import type {
   UpdateDeclarationBody,
   UpdatePromiseBody,
   UpdateStatementBody,
+  PaginationQuery,
+  PromiseStatusChangeBody,
   declarationListQuerySchema,
   promiseListQuerySchema,
   statementListQuerySchema,
@@ -16,7 +19,7 @@ import type {
 import { and, count, desc, eq, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Db } from '../../db/client';
-import { declarations, promises, statements } from '../../db/schema/index';
+import { declarations, promises, promiseUpdates, statements } from '../../db/schema/index';
 import { audit } from '../../lib/audit';
 import { assertHasChanges, definedOnly, diffOf, iso, isoOrNull, notFound } from '../../lib/crud';
 
@@ -162,6 +165,58 @@ export async function updatePromise(db: Db, user: AuthUser, id: number, body: Up
     await audit(tx, { actorId: user.id, action: 'update', entityType: 'promise', entityId: id, diff: diffOf(before, after!) });
     return toAdminPromise(after!);
   });
+}
+
+function toAdminPromiseUpdate(row: typeof promiseUpdates.$inferSelect): AdminPromiseUpdate {
+  return {
+    id: row.id,
+    promiseId: row.promiseId,
+    status: row.status,
+    date: row.date,
+    noteMn: row.noteMn,
+    sourceUrl: row.sourceUrl,
+    createdBy: row.createdBy,
+    createdAt: iso(row.createdAt),
+  };
+}
+
+/**
+ * The only way to change a promise's status: records the dated decision (note + evidence URL) and mirrors the
+ * status on the promise. The same status is allowed — that records a review that confirmed it.
+ */
+export async function changePromiseStatus(db: Db, user: AuthUser, id: number, body: PromiseStatusChangeBody): Promise<AdminPromise> {
+  return db.transaction(async (tx) => {
+    const [before] = await tx.select().from(promises).where(eq(promises.id, id)).for('update');
+    if (!before) throw notFound('Promise');
+    const [update] = await tx
+      .insert(promiseUpdates)
+      .values({ promiseId: id, status: body.status, date: body.date, noteMn: body.noteMn, sourceUrl: body.sourceUrl, createdBy: user.id })
+      .returning();
+    const [after] = await tx.update(promises).set({ status: body.status, lastReviewedAt: new Date() }).where(eq(promises.id, id)).returning();
+    await audit(tx, {
+      actorId: user.id,
+      action: 'update',
+      entityType: 'promise',
+      entityId: id,
+      diff: { ...diffOf(before, after!), promiseUpdate: toAdminPromiseUpdate(update!) },
+    });
+    return toAdminPromise(after!);
+  });
+}
+
+/** Status history, newest first. */
+export async function listPromiseUpdates(db: Db, id: number, query: PaginationQuery): Promise<Page<AdminPromiseUpdate>> {
+  await getPromise(db, id); // 404 for an unknown promise
+  const where = eq(promiseUpdates.promiseId, id);
+  const [total] = await db.select({ n: count() }).from(promiseUpdates).where(where);
+  const rows = await db
+    .select()
+    .from(promiseUpdates)
+    .where(where)
+    .orderBy(desc(promiseUpdates.date), desc(promiseUpdates.id))
+    .limit(query.pageSize)
+    .offset((query.page - 1) * query.pageSize);
+  return { items: rows.map(toAdminPromiseUpdate), total: total?.n ?? 0 };
 }
 
 export async function deletePromise(db: Db, user: AuthUser, id: number): Promise<void> {

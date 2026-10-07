@@ -84,6 +84,18 @@ export const publicArticleSchema = publicArticleSummarySchema.extend({
 });
 export type PublicArticle = z.infer<typeof publicArticleSchema>;
 
+// --- Homepage --------------------------------------------------------------------------------------------------
+
+/** The live homepage, resolved: pinned articles that are no longer published are replaced by the latest ones. */
+export const publicHomepageSchema = z.object({
+  hero: publicArticleSummarySchema.nullable(),
+  featured: z.array(publicArticleSummarySchema),
+  sections: z.array(z.object({ category: publicTaxonomySchema, articles: z.array(publicArticleSummarySchema) })),
+  /** When the live layout was saved (null = no layout saved yet, defaults used). */
+  updatedAt: isoDateTimeSchema.nullable(),
+});
+export type PublicHomepage = z.infer<typeof publicHomepageSchema>;
+
 // --- Persons ---------------------------------------------------------------------------------------------------
 
 export const publicPositionSchema = z.object({
@@ -192,6 +204,7 @@ export const publicBillSchema = z.object({
 export type PublicBill = z.infer<typeof publicBillSchema>;
 
 export const publicArticleListResponseSchema = listResponse(publicArticleSummarySchema);
+export const publicHomepageResponseSchema = dataResponse(publicHomepageSchema);
 export const publicArticleResponseSchema = dataResponse(publicArticleSchema);
 export const publicTaxonomyResponseSchema = dataResponse(publicTaxonomySchema);
 export const publicPersonResponseSchema = dataResponse(publicPersonSchema);

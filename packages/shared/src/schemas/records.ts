@@ -47,7 +47,8 @@ const promiseFields = z.object({
   organizationId: positiveIdSchema.nullable().optional(),
   textMn: z.string().trim().min(1).max(5000),
   madeOn: isoDateSchema,
-  status: promiseStatusSchema.optional(),
+  /** Status changes only through POST /promises/:id/status, which records a note and evidence. New promises are `not_rated`. */
+  status: z.never({ error: 'Change status with POST /promises/:id/status' }).optional(),
   evidence: z.array(promiseEvidenceSchema).max(50).optional(),
   lastReviewedAt: isoDateTimeSchema.nullable().optional(),
   sourceUrl: sourceUrlSchema,
@@ -83,6 +84,27 @@ export const promiseListQuerySchema = paginationQuerySchema.extend({
   organizationId: z.coerce.number().int().positive().optional(),
   status: promiseStatusSchema.optional(),
 });
+
+/** A dated status decision on a promise: the note explains it, the source URL is the evidence. */
+export const promiseStatusChangeBodySchema = z.object({
+  status: promiseStatusSchema,
+  date: isoDateSchema,
+  noteMn: z.string().trim().min(1).max(2000),
+  sourceUrl: sourceUrlSchema,
+});
+export type PromiseStatusChangeBody = z.infer<typeof promiseStatusChangeBodySchema>;
+
+export const adminPromiseUpdateSchema = z.object({
+  id: z.number().int(),
+  promiseId: z.number().int(),
+  status: promiseStatusSchema,
+  date: isoDateSchema,
+  noteMn: z.string(),
+  sourceUrl: z.string(),
+  createdBy: z.number().int(),
+  createdAt: isoDateTimeSchema,
+});
+export type AdminPromiseUpdate = z.infer<typeof adminPromiseUpdateSchema>;
 
 // --- Declarations ----------------------------------------------------------------------------------------------
 
@@ -124,5 +146,6 @@ export const adminStatementResponseSchema = dataResponse(adminStatementSchema);
 export const adminStatementListResponseSchema = listResponse(adminStatementSchema);
 export const adminPromiseResponseSchema = dataResponse(adminPromiseSchema);
 export const adminPromiseListResponseSchema = listResponse(adminPromiseSchema);
+export const adminPromiseUpdateListResponseSchema = listResponse(adminPromiseUpdateSchema);
 export const adminDeclarationResponseSchema = dataResponse(adminDeclarationSchema);
 export const adminDeclarationListResponseSchema = listResponse(adminDeclarationSchema);

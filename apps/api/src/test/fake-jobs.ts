@@ -5,6 +5,7 @@ export type JobCall =
   | { type: 'cancelScheduledPublish'; articleId: number }
   | { type: 'enqueuePublished'; articleId: number; isBreaking: boolean }
   | { type: 'enqueueChanged'; articleId: number }
+  | { type: 'enqueueHomepageChanged' }
   | { type: 'enqueueMediaVariants'; mediaId: number };
 
 export interface FakeJobs extends Jobs {
@@ -31,6 +32,9 @@ export function createFakeJobs(): FakeJobs {
     },
     async enqueueChanged(articleId) {
       calls.push({ type: 'enqueueChanged', articleId });
+    },
+    async enqueueHomepageChanged() {
+      calls.push({ type: 'enqueueHomepageChanged' });
     },
     async enqueueMediaVariants(mediaId) {
       calls.push({ type: 'enqueueMediaVariants', mediaId });

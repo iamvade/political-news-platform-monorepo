@@ -10,7 +10,7 @@ Source-only TypeScript package — `exports` point straight at `.ts` files, ther
 
 | Export | Contents |
 |---|---|
-| `@news/shared/schemas` | `common` (ErrorCode, pagination, `dataResponse`/`listResponse`, field schemas), `enums` (roles, statuses, kinds — also used to build Postgres enums), `auth`, `articles`, `lookup` (editor pickers, tag creation), `people`, `legislation`, `records`, `corrections`, `imports`, `media`, `public` |
+| `@news/shared/schemas` | `common` (ErrorCode, pagination, `dataResponse`/`listResponse`, field schemas), `enums` (roles, statuses, kinds — also used to build Postgres enums), `auth`, `articles`, `lookup` (editor pickers, tag creation), `homepage` (zones, admin layout, versions), `people`, `legislation`, `records`, `corrections`, `imports`, `media`, `public` |
 | `@news/shared/content` | `contentDocSchema` (Tiptap allowlist + depth guard; nodes include `image` with caption/credit, `embed`, `pullQuote`), `renderHtml`, `hasText`, `escapeHtml`, `parseEmbedUrl` (YouTube/Facebook URL → canonical URL + the only iframe `src` ever rendered) |
 | `@news/shared/policies` | `can(user, action, article?)`, `TRANSITIONS`, `canTransition` — article permissions, enforced by the API and used by the admin to show workflow buttons |
 | `@news/shared/translit` | `slugify` (Mongolian Cyrillic → ASCII slug), `SLUG_PATTERN`, `SLUG_MAX_LENGTH` |
@@ -30,8 +30,11 @@ Source-only TypeScript package — `exports` point straight at `.ts` files, ther
 | `admin.media` | `requestUpload`, `confirm`, `list`, `get`, `update`, `uploadFile(file, { filename, alt?, credit? })` |
 | `admin.import` | `votes`, `positions` |
 | `lookup` | `search(kind, { search?, ids?, limit? })` for persons, organizations, bills, categories, tags |
+| `homepage` | `get`, `save({ zones, expectedVersion })`, `versions` (editor, admin) |
+| `admin.promises` (extra) | `changeStatus(id, { status, date, noteMn, sourceUrl })`, `updates(id)` |
+| `admin.bills` (extra) | `voteRoster(id, { date, motion })`, `voteSessions(id)` |
 | `taxonomy` | `createTag({ nameMn, nameEn? })` |
-| `public` | `articles.list/get`, `categories.get/articles`, `tags.get/articles`, `persons.get/positions/articles/votes/statements/promises/declarations`, `organizations.get`, `bills.get` |
+| `public` | `homepage.get`, `articles.list/get`, `categories.get/articles`, `tags.get/articles`, `persons.get/positions/articles/votes/statements/promises/declarations`, `organizations.get`, `bills.get` |
 
 Admin usage: `credentials: 'include'` and `getCsrfToken: () => token` (token from `auth.login`/`auth.me`); the client adds `X-CSRF-Token` to every non-GET request. `uploadFile` PUTs straight to storage **without** API cookies or the CSRF header.
 
@@ -60,6 +63,7 @@ pnpm -F @news/shared test
 - Public DTOs (`schemas/public.ts`) must never carry internal fields (emails, `deletedAt`, editor ids).
 - `contentDocSchema` rejects unknown Tiptap nodes and marks — the admin editor and this allowlist must change together (see [articles](../features/articles.md)).
 - Embeds store only the canonical URL; `renderHtml` derives the iframe `src` from `parseEmbedUrl` at render time, so a stored document can never point an iframe elsewhere.
+- **Promise `status` is `z.never()` on create/update bodies**: status changes only through `promiseStatusChangeBodySchema` (POST /promises/:id/status), which requires a note and an evidence URL.
 - Policies live here (not in the API) so the admin's buttons and the API's 403s cannot drift. The API's `modules/articles/policy.ts` only re-exports them.
 
 ## Key files
@@ -67,4 +71,4 @@ pnpm -F @news/shared test
 `src/schemas/*.ts`, `src/content/{schema,render,embed}.ts`, `src/policies/articles.ts`, `src/translit/slugify.ts`, `src/api-client/{client,errors}.ts`, tests next to each.
 
 ---
-Last updated: 2026-10-07 — embed/pull-quote/image-caption nodes, `parseEmbedUrl`, policies moved here, lookup schemas, article link ids, `EDIT_CONFLICT`, `autosave` revision kind.
+Last updated: 2026-10-07 — homepage schemas, promise status change + history, vote roster/sessions, `ARTICLE_NOT_PUBLISHED`; earlier: editor nodes, policies, lookups.

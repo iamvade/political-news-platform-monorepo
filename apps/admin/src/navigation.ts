@@ -1,11 +1,11 @@
 import type { UserRole } from '@news/shared/schemas';
 
-export type SectionKey = 'articles' | 'persons' | 'organizations' | 'bills' | 'media' | 'homepage' | 'users';
+export type SectionKey = 'articles' | 'persons' | 'organizations' | 'bills' | 'promises' | 'corrections' | 'media' | 'homepage' | 'users';
 
 export interface Section {
   key: SectionKey;
   path: string;
-  /** Roles that may open the section. Mirrors the API's requireRole (Homepage/Users: PRD, no API yet). */
+  /** Roles that may open the section. Mirrors the API's requireRole (Users: PRD, no API yet). */
   roles: readonly UserRole[];
 }
 
@@ -15,6 +15,8 @@ export const SECTIONS: readonly Section[] = [
   { key: 'persons', path: '/persons', roles: ['data_editor', 'admin'] },
   { key: 'organizations', path: '/organizations', roles: ['data_editor', 'admin'] },
   { key: 'bills', path: '/bills', roles: ['data_editor', 'admin'] },
+  { key: 'promises', path: '/promises', roles: ['data_editor', 'admin'] },
+  { key: 'corrections', path: '/corrections', roles: ['data_editor', 'admin'] },
   { key: 'media', path: '/media', roles: ['reporter', 'editor', 'admin', 'data_editor'] },
   { key: 'homepage', path: '/homepage', roles: ['editor', 'admin'] },
   { key: 'users', path: '/users', roles: ['admin'] },

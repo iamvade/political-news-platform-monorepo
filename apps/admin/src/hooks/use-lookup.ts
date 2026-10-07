@@ -1,5 +1,6 @@
 import type { LookupItem, LookupKind } from '@news/shared/schemas';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { api } from '@/lib/api';
 
 /** Labels (and photos) for already-selected ids, e.g. linked persons of an article. */
@@ -11,7 +12,8 @@ export function useLookupItems(kind: LookupKind, ids: number[]): Map<number, Loo
     enabled: sorted.length > 0,
     staleTime: 5 * 60_000,
   });
-  return new Map((query.data?.data ?? []).map((item) => [item.id, item]));
+  // Stable identity per response, so table columns that depend on it are not rebuilt every render.
+  return useMemo(() => new Map((query.data?.data ?? []).map((item) => [item.id, item])), [query.data]);
 }
 
 /** Search results for a picker (only while it is open). */

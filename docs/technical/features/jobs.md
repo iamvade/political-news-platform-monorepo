@@ -13,6 +13,7 @@ Services never talk to BullMQ directly; they call the `Jobs` interface (`app.job
 | `scheduled-publish` | `publish` (delayed, jobId `article-<id>`) | `scheduleArticle` | `processScheduledPublish` | Reschedule = remove + re-add; publish/unpublish cancels. 3 attempts |
 | `scheduled-publish` | `sweep` (job scheduler, every 60 s) | worker startup (`upsertJobScheduler`) | `sweepScheduled` | Publishes overdue scheduled articles whose job was lost |
 | `revalidate` | `article` | publish, edit of published, unpublish | `processRevalidate` | POSTs `{ tags: ['article:<id>', 'home'] }` with `x-revalidate-secret` to `WEB_REVALIDATE_URL`; skipped when unset. 5 attempts, exponential backoff |
+| `revalidate` | `tags` (`{ tags: ['home'] }`) | homepage layout saved (`enqueueHomepageChanged`) | `processRevalidate` | Same endpoint and retries; job data carries the tags |
 | `push` | `article` | publish | `processPush` | **Placeholder** |
 | `search-index` | `article` | publish, edit of published, unpublish | `processSearchIndex` | **Placeholder** |
 | `media-variants` | `variants` (jobId `media-<id>`) | media confirm | `processMediaVariants` | sharp WebP variants; concurrency 1; 3 attempts, then the row is marked `failed` ([media](media.md)) |
@@ -51,4 +52,4 @@ docker exec news-v2-redis-1 redis-cli -n 0 KEYS 'bull:*' | head
 `apps/api/src/jobs/{types,queue,workers}.ts`, `apps/api/src/jobs/processors/*.ts`, `apps/api/src/plugins/jobs.ts`, `apps/api/src/test/fake-jobs.ts`.
 
 ---
-Last updated: 2026-10-07 — initial version.
+Last updated: 2026-10-07 — homepage revalidate job (`enqueueHomepageChanged`).

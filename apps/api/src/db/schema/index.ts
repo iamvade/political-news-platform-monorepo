@@ -2,6 +2,7 @@
 export * from './articles';
 export * from './audit';
 export * from './corrections';
+export * from './homepage';
 export * from './legislation';
 export * from './media';
 export * from './people';

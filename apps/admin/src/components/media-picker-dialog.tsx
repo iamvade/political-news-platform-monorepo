@@ -14,12 +14,12 @@ import { api } from '@/lib/api';
 import { thumbnailUrl, variantUrl } from '@/lib/media';
 import { notify } from '@/lib/notify';
 
-export type MediaPickerPurpose = 'inline' | 'cover';
+export type MediaPickerPurpose = 'inline' | 'cover' | 'portrait';
 
 interface MediaPickerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** `cover` requires alt text and credit (the API refuses a cover without them: MEDIA_NOT_USABLE). */
+  /** `cover` and `portrait` require alt text and credit (the API refuses a cover without them: MEDIA_NOT_USABLE). */
   purpose: MediaPickerPurpose;
   onSelect: (media: AdminMedia, extra: { caption: string | null }) => void;
 }
@@ -81,7 +81,7 @@ export function MediaPickerDialog({ open, onOpenChange, purpose, onSelect }: Med
     }
   }
 
-  const needsMeta = purpose === 'cover' && (!alt.trim() || !credit.trim());
+  const needsMeta = purpose !== 'inline' && (!alt.trim() || !credit.trim());
   const ready = media?.status === 'ready';
 
   async function confirm() {
@@ -109,7 +109,7 @@ export function MediaPickerDialog({ open, onOpenChange, purpose, onSelect }: Med
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{t(purpose === 'cover' ? 'mediaPicker.coverTitle' : 'mediaPicker.title')}</DialogTitle>
+          <DialogTitle>{t(`mediaPicker.titles.${purpose}`)}</DialogTitle>
           <DialogDescription>{t('mediaPicker.description')}</DialogDescription>
         </DialogHeader>
 
@@ -185,7 +185,7 @@ export function MediaPickerDialog({ open, onOpenChange, purpose, onSelect }: Med
                     <Input id="media-caption" value={caption} onChange={(event) => setCaption(event.target.value)} maxLength={1000} />
                   </div>
                 )}
-                {needsMeta && <p className="text-sm text-destructive">{t('mediaPicker.coverNeedsMeta')}</p>}
+                {needsMeta && <p className="text-sm text-destructive">{t(purpose === 'cover' ? 'mediaPicker.coverNeedsMeta' : 'mediaPicker.needsMeta')}</p>}
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{t('mediaPicker.nothingSelected')}</p>

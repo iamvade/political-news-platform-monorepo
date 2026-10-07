@@ -14,8 +14,8 @@
 2. Plugins: `db` (Drizzle/postgres.js) → `redis` (ioredis, fail-fast) → `security` (helmet, CORS, global rate limit on Redis) → `auth` (cookies, `request.user`, `requireAuth`/`requireRole`/`verifyOrigin`/`verifyCsrf`) → `jobs` (`app.jobs`) → `storage` (`app.storage`) → `swagger` (development only, UI at `/docs`).
 3. Routes:
    - `/health`, `/health/ready` (unversioned, not rate-limited).
-   - `/v1/public` scope — `onSend` hook adds `Cache-Control` (see [public-api](../features/public-api.md)). Modules: articles, taxonomy, people, legislation.
-   - `/v1/admin` scope — `onRequest: verifyOrigin`; auth routes (login is public); then a **protected sub-scope** with `onRequest: requireAuth, verifyCsrf` and `Cache-Control: no-store`. Modules: articles, people, legislation, records, corrections, media, lookup, taxonomy.
+   - `/v1/public` scope — `onSend` hook adds `Cache-Control` (see [public-api](../features/public-api.md)). Modules: articles, taxonomy, homepage, people, legislation.
+   - `/v1/admin` scope — `onRequest: verifyOrigin`; auth routes (login is public); then a **protected sub-scope** with `onRequest: requireAuth, verifyCsrf` and `Cache-Control: no-store`. Modules: articles, people, legislation, records, corrections, media, lookup, taxonomy, homepage.
 
 `server.ts` loads env, builds the app, starts the BullMQ workers when `WORKERS_ENABLED`, and listens.
 
@@ -35,7 +35,7 @@ Auth and role checks run in **`onRequest`**, before validation, so unauthorised 
 
 ### Module layout
 
-`src/modules/<domain>/`: `admin.routes.ts`, `public.routes.ts`, `service.ts` (business logic + DB), `index.ts` (registers the plugin), plus extras (`import.ts`, `policy.ts`, `validation.ts`, `public.service.ts`). Domains: `auth`, `articles`, `people`, `legislation`, `records`, `corrections`, `media`, `taxonomy` (public reads + admin tag creation), `lookup` (admin-only picker search for the article editor), `health`.
+`src/modules/<domain>/`: `admin.routes.ts`, `public.routes.ts`, `service.ts` (business logic + DB), `index.ts` (registers the plugin), plus extras (`import.ts`, `policy.ts`, `validation.ts`, `public.service.ts`). Domains: `auth`, `articles`, `people`, `legislation` (incl. `vote-entry.ts`: vote roster and sessions), `records` (incl. the promise status endpoint), `corrections`, `media`, `taxonomy` (public reads + admin tag creation), `lookup` (admin-only picker search for the article editor), `homepage` (layout versions, admin + public), `health`.
 
 ### Conventions (enforced across modules)
 
@@ -123,4 +123,4 @@ Storage variables are all-or-nothing outside production (media routes return 503
 `src/app.ts`, `src/server.ts`, `src/config/env.ts`, `src/plugins/*.ts`, `src/lib/*.ts`, `src/modules/*/`, `src/jobs/`, `src/db/`, `src/cli/`, `src/test/`, `vitest.config.ts`, `tsdown.config.ts`, `drizzle.config.ts`.
 
 ---
-Last updated: 2026-10-07 — `lookup` module, taxonomy admin routes (tag creation), iframe allowlist in the article sanitizer.
+Last updated: 2026-10-07 — `homepage` module, promise status endpoint, vote roster/sessions; earlier: `lookup`, tag creation, iframe allowlist.

@@ -15,6 +15,16 @@ const VARIANTS: Record<string, Variant> = {
   rejected: 'destructive',
   vetoed: 'destructive',
   withdrawn: 'outline',
+  // promises
+  kept: 'default',
+  in_progress: 'secondary',
+  broken: 'destructive',
+  not_rated: 'outline',
+  // votes
+  yes: 'default',
+  no: 'destructive',
+  abstain: 'secondary',
+  absent: 'outline',
   // media
   ready: 'default',
   processing: 'secondary',
@@ -22,8 +32,10 @@ const VARIANTS: Record<string, Variant> = {
   failed: 'destructive',
 };
 
+export type BadgeGroup = 'article' | 'bill' | 'billStage' | 'media' | 'organizationType' | 'promise' | 'vote' | 'sponsorRole' | 'billInitiator' | 'correctionEntity';
+
 /** Translated status badge, e.g. <StatusBadge group="article" value="draft" />. */
-export function StatusBadge({ group, value }: { group: 'article' | 'bill' | 'media' | 'organizationType'; value: string }) {
+export function StatusBadge({ group, value }: { group: BadgeGroup; value: string }) {
   const { t } = useTranslation();
   return <Badge variant={VARIANTS[value] ?? 'secondary'}>{t(`status.${group}.${value}`)}</Badge>;
 }

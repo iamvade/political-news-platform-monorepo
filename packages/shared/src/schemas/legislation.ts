@@ -114,9 +114,48 @@ export const voteListQuerySchema = paginationQuerySchema.extend({
   motion: voteMotionSchema.optional(),
 });
 
+// --- Vote entry (roster grid and sessions) ------------------------------------------------------------------------
+
+export const voteRosterQuerySchema = z.object({ date: isoDateSchema, motion: voteMotionSchema });
+export type VoteRosterQuery = z.infer<typeof voteRosterQuerySchema>;
+
+export const voteRosterMemberSchema = z.object({
+  personId: z.number().int(),
+  displayName: z.string(),
+  /** Party (short name) on the vote date. */
+  partyShortName: z.string().nullable(),
+  /** False for someone who has a vote recorded but held no MP seat on that date. */
+  inOffice: z.boolean(),
+  voteId: z.number().int().nullable(),
+  value: voteValueSchema.nullable(),
+  sourceUrl: z.string().nullable(),
+});
+export type VoteRosterMember = z.infer<typeof voteRosterMemberSchema>;
+
+/** MPs serving on `date` (MP seat = open position at a parliament or constituency organization) and their recorded votes. */
+export const voteRosterSchema = z.object({
+  billId: z.number().int(),
+  date: isoDateSchema,
+  motion: z.string(),
+  members: z.array(voteRosterMemberSchema),
+});
+export type VoteRoster = z.infer<typeof voteRosterSchema>;
+
+/** One roll call on a bill: all votes sharing (date, motion). */
+export const voteSessionSchema = z.object({
+  date: isoDateSchema,
+  motion: z.string(),
+  counts: z.record(voteValueSchema, z.number().int()),
+  total: z.number().int(),
+  sourceUrls: z.array(z.string()),
+});
+export type VoteSession = z.infer<typeof voteSessionSchema>;
+
 export const adminBillResponseSchema = dataResponse(adminBillSchema);
 export const adminBillListResponseSchema = listResponse(adminBillSchema);
 export const adminBillStageResponseSchema = dataResponse(adminBillStageSchema);
 export const adminBillStageListResponseSchema = listResponse(adminBillStageSchema);
 export const adminVoteResponseSchema = dataResponse(adminVoteSchema);
 export const adminVoteListResponseSchema = listResponse(adminVoteSchema);
+export const voteRosterResponseSchema = dataResponse(voteRosterSchema);
+export const voteSessionListResponseSchema = listResponse(voteSessionSchema);

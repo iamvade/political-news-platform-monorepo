@@ -1,6 +1,8 @@
 import {
   BuildingIcon,
   ChevronsUpDownIcon,
+  FilePenLineIcon,
+  HandshakeIcon,
   ImageIcon,
   LandmarkIcon,
   LayoutTemplateIcon,
@@ -44,6 +46,8 @@ const ICONS: Record<SectionKey, LucideIcon> = {
   persons: UsersIcon,
   organizations: BuildingIcon,
   bills: LandmarkIcon,
+  promises: HandshakeIcon,
+  corrections: FilePenLineIcon,
   media: ImageIcon,
   homepage: LayoutTemplateIcon,
   users: UserCogIcon,

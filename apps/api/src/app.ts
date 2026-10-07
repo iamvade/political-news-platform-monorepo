@@ -15,6 +15,7 @@ import { lookupAdminModule } from './modules/lookup/index';
 import { taxonomyAdminModule, taxonomyPublicModule } from './modules/taxonomy/index';
 import { publicCacheHook } from './lib/cache';
 import { healthModule } from './modules/health/index';
+import { homepageAdminModule, homepagePublicModule } from './modules/homepage/index';
 import { authPlugin } from './plugins/auth';
 import { dbPlugin } from './plugins/db';
 import { jobsPlugin } from './plugins/jobs';
@@ -70,6 +71,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}) {
           pub.addHook('onSend', publicCacheHook);
           await pub.register(articlesPublicModule);
           await pub.register(taxonomyPublicModule);
+          await pub.register(homepagePublicModule);
           await pub.register(peoplePublicModule);
           await pub.register(legislationPublicModule);
         },
@@ -98,6 +100,7 @@ export async function buildApp(env: Env, options: BuildAppOptions = {}) {
             await protectedAdmin.register(mediaAdminModule);
             await protectedAdmin.register(lookupAdminModule);
             await protectedAdmin.register(taxonomyAdminModule);
+            await protectedAdmin.register(homepageAdminModule);
           });
         },
         { prefix: '/admin' },
