@@ -115,6 +115,7 @@ Server components, unless marked *client*. Labels come from `messages/mn.json`, 
 | `Pagination` | `page`, `totalPages`, `hrefFor(page)` | Phones: prev · "3 / 12" · next. From `sm`: numbers with gaps (`lib/pagination.ts` `pageRange`). Disabled edges are spans |
 | `SourceLink` | `href`, `variant: 'inline' \| 'icon'` | Host always visible or announced; new tab with `noopener noreferrer` |
 | `CorrectionNotice` | `corrections: { date, description, reason }[]` | `aside role="note"`, newest first, links to `/corrections`; renders nothing when empty |
+| `RelatedArticles` / `RelatedArticlesSkeleton` | `articles: PublicArticleSummary[]` / — | "Холбоотой мэдээ" section of compact `ArticleCard`s, one column on phones and two from `sm`; renders nothing when empty. The skeleton keeps the heading and four card-sized rows (`aria-busy`), so nothing shifts when the rail arrives. Heading ids come from `useId()` |
 
 URL builders live in `lib/routes.ts` (PRD §7: `/news/{id}-{slug}`, `/person/{id}-{slug}`, `/party/{slug}`, `/tag/{slug}`…; `parseIdSlug` reads an `{id}-{slug}` segment). Image `src`/`srcSet` come from `lib/media.ts`.
 
@@ -166,7 +167,7 @@ pnpm -F @news/web test
 - **Not checked in a real browser.** No browser or device testing was done: layout and dark mode are covered by markup tests and contrast maths. Check `/styleguide` on a phone (including the Facebook in-app browser).
 - **Follow-ups:**
   - If Lighthouse (mobile, throttled) on the article page shows fonts delaying LCP: self-host one trimmed file per font (Basic Latin + Mongolian Cyrillic) via `next/font/local`, an estimated 75–85 KB in 2 files.
-  - BreadcrumbList JSON-LD (needs a site URL env var)
+  - BreadcrumbList JSON-LD on person pages (article pages have it; see [public-site](public-site.md#seo-srclibseots))
   - article type labels on cards (analysis / opinion / sponsored, PRD §10.5; not in the API yet)
   - italic font files
   - a breaking-news banner component
@@ -176,4 +177,4 @@ pnpm -F @news/web test
 `apps/web/src/app/{globals.css,layout.tsx}`, `apps/web/src/components/`, `apps/web/src/lib/{theme,routes,media,pagination}.ts`, `apps/web/src/design/`, `apps/web/src/app/styleguide/`, `apps/web/messages/mn.json`, `apps/web/vitest.config.ts`, `apps/web/src/test/`.
 
 ---
-Last updated: 2026-10-07 — only Source Serif 4 is preloaded (~103 KB); font size table; earlier: initial design system.
+Last updated: 2026-10-08 — `RelatedArticles` and its skeleton (also on /styleguide). Earlier: only Source Serif 4 is preloaded (~103 KB); font size table; initial design system.

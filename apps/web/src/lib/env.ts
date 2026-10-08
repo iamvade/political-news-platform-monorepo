@@ -11,6 +11,8 @@ const schema = z.object({
   SITE_URL: httpUrl.optional(),
   /** Shared with the API (WEB_REVALIDATE_SECRET). Without it /api/revalidate answers 503. */
   WEB_REVALIDATE_SECRET: z.string().min(32).optional(),
+  /** Facebook app id for the `fb:app_id` meta tag (Sharing Debugger, share insights). Optional. */
+  FACEBOOK_APP_ID: z.string().regex(/^\d+$/).optional(),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

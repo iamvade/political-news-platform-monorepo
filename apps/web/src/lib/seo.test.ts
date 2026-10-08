@@ -1,7 +1,7 @@
 import type { PublicArticle, PublicPerson } from '@news/shared/schemas';
 import { describe, expect, it } from 'vitest';
 import { articleSummary, cover } from '@/test/fixtures';
-import { articleMetadata, newsArticleJsonLd, personJsonLd, personMetadata, plainText, serializeJsonLd, shareImage, type SiteInfo } from './seo';
+import { articleMetadata, articleShareImage, breadcrumbJsonLd, newsArticleJsonLd, organizationJsonLd, personJsonLd, personMetadata, plainText, serializeJsonLd, shareImage, type SiteInfo } from './seo';
 
 const site: SiteInfo = { url: 'https://news.example.mn', name: 'Улс төрийн мэдээ', description: 'Тайлбар' };
 
@@ -53,10 +53,20 @@ describe('metadata', () => {
     expect(meta.twitter).toMatchObject({ card: 'summary_large_image', images: ['https://media.example/a-1600.webp'] });
   });
 
-  it('falls back to the generated share card and a text description', () => {
+  it('without a cover: the article\'s own headline card and a text description', () => {
     const meta = articleMetadata({ ...article, cover: null, lede: null }, site);
     expect(meta.description).toBe('Их Хурал & Засгийн газар.');
-    expect(meta.openGraph?.images).toEqual([{ url: 'https://news.example.mn/opengraph-image', width: 1200, height: 630, alt: 'Улс төрийн мэдээ' }]);
+    const [image] = meta.openGraph?.images as { url: string }[];
+    expect(image).toEqual({ url: expect.stringMatching(/^https:\/\/news\.example\.mn\/news\/42-ikh-khural-tosviig-batlav\/share-card\?v=[0-9a-f]{12}$/), width: 1200, height: 630, alt: article.title });
+    expect(meta.twitter).toMatchObject({ images: [image!.url] });
+    expect(newsArticleJsonLd({ ...article, cover: null }, site).image).toEqual([image!.url]);
+  });
+
+  it('the share card URL changes with the text on the card, and only then', () => {
+    const url = (a: PublicArticle) => articleShareImage(a, site).url;
+    expect(url(article)).toBe(url({ ...article, lede: 'Өөр', updatedAt: '2030-01-01T00:00:00.000Z', bodyHtml: '<p>x</p>' }));
+    expect(url(article)).not.toBe(url({ ...article, title: `${article.title}!` }));
+    expect(url(article)).not.toBe(url({ ...article, category: null }));
   });
 
   it('person: profile type, role and party in the description', () => {
@@ -74,10 +84,36 @@ describe('JSON-LD', () => {
       headline: article.title,
       datePublished: article.publishedAt,
       author: [{ '@type': 'Person', name: 'Б.Сараа' }],
-      publisher: { '@id': 'https://news.example.mn/#organization' },
+      publisher: {
+        '@id': 'https://news.example.mn/#organization',
+        '@type': 'NewsMediaOrganization',
+        name: 'Улс төрийн мэдээ',
+        url: 'https://news.example.mn/',
+        logo: { '@type': 'ImageObject', url: 'https://news.example.mn/opengraph-image' },
+      },
       mentions: [
         { '@type': 'Person', name: 'Г.Батбаяр', url: 'https://news.example.mn/person/12-g-batbayar' },
         { '@type': 'Organization', name: 'Монгол Ардын Нам', alternateName: 'МАН' },
+      ],
+    });
+  });
+
+  it('the publisher node inside NewsArticle has no @context; the standalone one does', () => {
+    expect(newsArticleJsonLd(article, site).publisher).not.toHaveProperty('@context');
+    expect(organizationJsonLd(site)).toMatchObject({ '@context': 'https://schema.org', '@id': 'https://news.example.mn/#organization' });
+  });
+
+  it('BreadcrumbList numbers items from 1 with absolute URLs', () => {
+    const ld = breadcrumbJsonLd(site, [
+      { name: 'Нүүр', path: '/' },
+      { name: article.title, path: '/news/42-ikh-khural-tosviig-batlav' },
+    ]);
+    expect(ld).toEqual({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Нүүр', item: 'https://news.example.mn/' },
+        { '@type': 'ListItem', position: 2, name: article.title, item: 'https://news.example.mn/news/42-ikh-khural-tosviig-batlav' },
       ],
     });
   });

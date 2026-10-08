@@ -11,7 +11,7 @@ Party, tag, category, bill and search pages aren't built yet; their public API r
 
 ## How it works
 
-- `src/lib/env.ts`: server env validated with Zod on first use (`API_URL`, `SITE_URL`, `WEB_REVALIDATE_SECRET`).
+- `src/lib/env.ts`: server env validated with Zod on first use (`API_URL`, `SITE_URL`, `WEB_REVALIDATE_SECRET`, `FACEBOOK_APP_ID`).
 - `src/lib/api.ts`: server-only client (`import 'server-only'`) built lazily from `API_URL`, so `next build` does not need the API.
 - `src/lib/data.ts`: the page loaders. Each one fetches with `force-cache` and per-entity tags; revalidation flow in [public-site](../features/public-site.md).
 - `src/i18n/request.ts` — next-intl with a single `mn` locale and no URL prefix; time zone `Asia/Ulaanbaatar`.
@@ -46,6 +46,7 @@ pnpm -F @news/web start
   - `API_URL` (server, required)
   - `SITE_URL` (absolute public origin; required in production, `http://localhost:3000` otherwise)
   - `WEB_REVALIDATE_SECRET` (≥ 32 chars, the same value as the API's; `/api/revalidate` answers 503 without it)
+  - `FACEBOOK_APP_ID` (optional, digits; adds `fb:app_id` to every page)
   - `STYLEGUIDE_ENABLED` (optional, read at build time)
 - Fetch data through the loaders in `lib/data.ts`, never `getApi()` directly from a page, so every fetch has cache tags. New data needs a tag that the API sends on change ([public-site](../features/public-site.md#how-to-maintain)).
 - Images: use `cover.variants` for `srcset` (WebP 320–1600) and `cover.url` (1024) as the default.
@@ -66,7 +67,7 @@ pnpm -F @news/web start
 
 ## Key files
 
-`src/app/(home)/`, `src/app/{layout,error,not-found,opengraph-image,globals.css}`, `src/app/news/`, `src/app/person/`, `src/app/api/revalidate/`, `src/app/styleguide/`, `src/components/`, `src/lib/{env,api,data,cache-tags,seo,site,article-html,theme,routes,media,pagination}.ts`, `src/assets/fonts/`, `src/design/`, `src/i18n/request.ts`, `src/test/`, `messages/mn.json`, `next.config.ts`, `vitest.config.ts`.
+`src/app/(home)/`, `src/app/{layout,error,not-found,opengraph-image,globals.css}`, `src/app/news/`, `src/app/person/`, `src/app/api/revalidate/`, `src/app/styleguide/`, `src/components/`, `src/lib/{env,api,data,cache-tags,seo,site,article-html,theme,routes,media,pagination}.ts`, `src/lib/share-card.tsx`, `src/assets/fonts/`, `src/design/`, `src/i18n/request.ts`, `src/test/`, `messages/mn.json`, `next.config.ts`, `vitest.config.ts`.
 
 ---
-Last updated: 2026-10-07 — homepage, article and person pages; `/api/revalidate`; `SITE_URL` and `WEB_REVALIDATE_SECRET`; click-to-load embeds built. Earlier: design system, /styleguide.
+Last updated: 2026-10-08 — `FACEBOOK_APP_ID`; article share cards and related rail ([public-site](../features/public-site.md)). Earlier: homepage, article and person pages; `/api/revalidate`; `SITE_URL` and `WEB_REVALIDATE_SECRET`; click-to-load embeds; design system, /styleguide.

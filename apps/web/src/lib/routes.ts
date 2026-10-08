@@ -15,6 +15,8 @@ export const routes = {
   privacy: '/about/privacy',
   terms: '/about/terms',
   article: (article: { id: number; slug: string }) => `/news/${article.id}-${article.slug}`,
+  /** Generated 1200×630 share card for an article without a cover (app/news/[idSlug]/share-card). */
+  articleShareCard: (article: { id: number; slug: string }) => `/news/${article.id}-${article.slug}/share-card`,
   person: (person: { id: number; slug: string }) => `/person/${person.id}-${person.slug}`,
   party: (slug: string) => `/party/${slug}`,
   tag: (slug: string) => `/tag/${slug}`,

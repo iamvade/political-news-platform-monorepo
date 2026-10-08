@@ -8,6 +8,7 @@ import { CorrectionNotice } from './correction-notice';
 import { Pagination } from './pagination';
 import { PartyBadge } from './party-badge';
 import { PersonCard } from './person-card';
+import { RelatedArticles, RelatedArticlesSkeleton } from './related-articles';
 import { SourceLink, sourceHost } from './source-link';
 import { Tag } from './tag';
 
@@ -157,5 +158,28 @@ describe('CorrectionNotice', () => {
   it('renders nothing without corrections', () => {
     const { container } = renderWithIntl(<CorrectionNotice corrections={[]} />);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('RelatedArticles', () => {
+  it('a labelled section of compact cards with level-3 headlines', () => {
+    renderWithIntl(<RelatedArticles articles={[articleSummary({ id: 41, slug: 'a' }), articleSummary({ id: 40, slug: 'b', title: 'Хоёр дахь мэдээ' })]} />);
+
+    const section = screen.getByRole('region', { name: 'Холбоотой мэдээ' });
+    expect(within(section).getAllByRole('article')).toHaveLength(2);
+    expect(within(section).getAllByRole('heading', { level: 3 })).toHaveLength(2);
+    expect(within(section).getByRole('link', { name: 'Хоёр дахь мэдээ' })).toHaveAttribute('href', '/news/40-b');
+  });
+
+  it('renders nothing when there are no related articles', () => {
+    const { container } = renderWithIntl(<RelatedArticles articles={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('skeleton keeps the heading and is marked busy, with no links', () => {
+    renderWithIntl(<RelatedArticlesSkeleton />);
+    const section = screen.getByRole('region', { name: 'Холбоотой мэдээ' });
+    expect(section).toHaveAttribute('aria-busy', 'true');
+    expect(within(section).queryAllByRole('link')).toHaveLength(0);
   });
 });

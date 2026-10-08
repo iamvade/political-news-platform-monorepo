@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { PublicArticle, PublicPerson } from '@news/shared/schemas';
 import type { Metadata } from 'next';
 import type { PublicMedia } from './media';
@@ -24,6 +25,18 @@ export const absoluteUrl = (site: SiteInfo, path: string) => new URL(path, `${si
 
 /** The generated default card (app/opengraph-image.tsx), for pages without their own image. */
 export const defaultShareImage = (site: SiteInfo): ShareImage => ({ url: absoluteUrl(site, '/opengraph-image'), width: 1200, height: 630, alt: site.name });
+
+/**
+ * The article's generated headline card. `v` is a hash of the text on the card: a new headline gets a new
+ * image URL, so Facebook's per-URL image cache never shows a stale one (PRD §11.4).
+ */
+export function articleShareImage(article: PublicArticle, site: SiteInfo): ShareImage {
+  const version = createHash('sha256')
+    .update(`${article.title}\n${article.category?.nameMn ?? ''}`)
+    .digest('hex')
+    .slice(0, 12);
+  return { url: absoluteUrl(site, `${routes.articleShareCard(article)}?v=${version}`), width: 1200, height: 630, alt: article.title };
+}
 
 /** Largest WebP variant up to 1600px wide, or null when the media has no public URL. */
 export function shareImage(media: PublicMedia | null, fallbackAlt: string): ShareImage | null {
@@ -54,7 +67,7 @@ export function plainText(html: string, max = 160): string {
 export function articleMetadata(article: PublicArticle, site: SiteInfo): Metadata {
   const url = absoluteUrl(site, routes.article(article));
   const description = article.lede ?? plainText(article.bodyHtml);
-  const image = shareImage(article.cover, article.title) ?? defaultShareImage(site);
+  const image = shareImage(article.cover, article.title) ?? articleShareImage(article, site);
   return {
     title: article.title,
     description,
@@ -103,10 +116,9 @@ type JsonLd = Record<string, unknown>;
 
 const organizationId = (site: SiteInfo) => `${site.url}/#organization`;
 
-/** The publisher (this news outlet). */
-export function organizationJsonLd(site: SiteInfo): JsonLd {
+/** The publisher (this news outlet), without `@context` so it can sit inline in other nodes. */
+function organizationNode(site: SiteInfo): JsonLd {
   return {
-    '@context': 'https://schema.org',
     '@type': 'NewsMediaOrganization',
     '@id': organizationId(site),
     name: site.name,
@@ -115,6 +127,19 @@ export function organizationJsonLd(site: SiteInfo): JsonLd {
     correctionsPolicy: absoluteUrl(site, routes.corrections),
     ethicsPolicy: absoluteUrl(site, routes.editorialPolicy),
     ownershipFundingInfo: absoluteUrl(site, routes.ownership),
+  };
+}
+
+export function organizationJsonLd(site: SiteInfo): JsonLd {
+  return { '@context': 'https://schema.org', ...organizationNode(site) };
+}
+
+/** Breadcrumb trail; every item needs a URL, so only pages that exist belong in it. */
+export function breadcrumbJsonLd(site: SiteInfo, items: { name: string; path: string }[]): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({ '@type': 'ListItem', position: index + 1, name: item.name, item: absoluteUrl(site, item.path) })),
   };
 }
 
@@ -140,7 +165,7 @@ const personRef = (site: SiteInfo, person: { id: number; slug: string; displayNa
 
 export function newsArticleJsonLd(article: PublicArticle, site: SiteInfo): JsonLd {
   const url = absoluteUrl(site, routes.article(article));
-  const image = shareImage(article.cover, article.title);
+  const image = shareImage(article.cover, article.title) ?? articleShareImage(article, site);
   return {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
@@ -149,14 +174,15 @@ export function newsArticleJsonLd(article: PublicArticle, site: SiteInfo): JsonL
     url,
     headline: article.title.length > 110 ? `${article.title.slice(0, 109)}…` : article.title,
     description: article.lede ?? plainText(article.bodyHtml),
-    image: image ? [image.url] : [defaultShareImage(site).url],
+    image: [image.url],
     datePublished: article.publishedAt,
     dateModified: article.updatedAt,
     inLanguage: 'mn',
     articleSection: article.category?.nameMn,
     keywords: article.tags.map((tag) => tag.nameMn),
     author: [{ '@type': 'Person', name: article.author.displayName }],
-    publisher: { '@id': organizationId(site), '@type': 'NewsMediaOrganization', name: site.name },
+    // Inline, so the publisher resolves on the article page itself (the full node is otherwise only on the homepage).
+    publisher: organizationNode(site),
     mentions: [
       ...article.persons.map((person) => personRef(site, person)),
       ...article.organizations.map((org) => ({ '@type': 'Organization', name: org.nameMn, alternateName: org.shortNameMn ?? undefined })),

@@ -8,6 +8,7 @@ import { CorrectionNotice } from '@/components/correction-notice';
 import { Pagination } from '@/components/pagination';
 import { PartyBadge } from '@/components/party-badge';
 import { PersonCard } from '@/components/person-card';
+import { RelatedArticles, RelatedArticlesSkeleton } from '@/components/related-articles';
 import { SourceLink } from '@/components/source-link';
 import { Tag } from '@/components/tag';
 import { ALPHABET_LOWER, ALPHABET_UPPER, ARTICLES, CORRECTIONS, CRUMBS, GLYPH_LINE, PANGRAM, PARTIES, PEOPLE, SOURCE_URL, TAGS, TYPE_SAMPLES } from './samples';
@@ -163,6 +164,16 @@ export default async function StyleguidePage() {
             {ARTICLES.slice(1).map((article) => (
               <ArticleCard key={article.id} article={article} size="compact" />
             ))}
+          </div>
+        </Specimen>
+        <Specimen label={t('variants.related')}>
+          <div className="max-w-content">
+            <RelatedArticles articles={ARTICLES.slice(1, 5)} />
+          </div>
+        </Specimen>
+        <Specimen label={t('variants.relatedLoading')}>
+          <div className="max-w-content">
+            <RelatedArticlesSkeleton />
           </div>
         </Specimen>
       </Section>

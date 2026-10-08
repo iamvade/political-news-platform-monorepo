@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { articleSummary } from '@/test/fixtures';
-import { duringBuildOr, getArticle, getHomepage, getLatestArticles, getPerson } from './data';
+import { duringBuildOr, getArticle, getHomepage, getLatestArticles, getPerson, getRelatedArticles } from './data';
 import { resetServerEnv } from './env';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -52,6 +52,27 @@ describe('data layer', () => {
   it.each([404, 410])('turns API %i into not-found', async (status) => {
     fetchMock.mockImplementation(async () => json({ error: { code: status === 410 ? 'GONE' : 'NOT_FOUND', message: 'x' } }, status));
     await expect(getArticle(42, 'x')).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('related articles: same category, tagged "articles", without the article itself', async () => {
+    const list = [articleSummary({ id: 42 }), articleSummary({ id: 41 }), articleSummary({ id: 40 })];
+    fetchMock.mockImplementation(async () => json({ data: list, pagination: { page: 1, pageSize: 3, total: 3, totalPages: 1 } }));
+
+    const related = await getRelatedArticles(article, 2);
+
+    expect(related.map((a) => a.id)).toEqual([41, 40]);
+    expect(String(fetchMock.mock.calls[0]![0])).toBe('http://api.test/v1/public/articles?pageSize=3&category=uls-tor');
+    expect(lastInit()).toMatchObject({ cache: 'force-cache', next: { tags: ['articles'], revalidate: 300 } });
+  });
+
+  it('related articles: the latest ones when the article has no category, at most `count`', async () => {
+    const list = [articleSummary({ id: 50 }), articleSummary({ id: 49 }), articleSummary({ id: 48 })];
+    fetchMock.mockImplementation(async () => json({ data: list, pagination: { page: 1, pageSize: 3, total: 3, totalPages: 1 } }));
+
+    const related = await getRelatedArticles({ ...article, category: null }, 2);
+
+    expect(related.map((a) => a.id)).toEqual([50, 49]);
+    expect(String(fetchMock.mock.calls[0]![0])).toBe('http://api.test/v1/public/articles?pageSize=3');
   });
 
   it('tags a person with person:{id} and people', async () => {

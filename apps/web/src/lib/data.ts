@@ -47,6 +47,19 @@ export async function getPerson(id: number, slug: string): Promise<PublicPerson>
   return data;
 }
 
+/**
+ * Up to `count` other articles from the article's category (the latest articles when it has none). Tagged
+ * `articles`, which the API sends on every publish, edit and unpublish.
+ */
+export async function getRelatedArticles(
+  article: Pick<PublicArticle, 'id' | 'category'>,
+  count: number,
+): Promise<PublicArticleSummary[]> {
+  const query = { pageSize: count + 1, ...(article.category && { category: article.category.slug }) };
+  const { data } = await getApi().public.articles.list(query, cached([cacheTags.articles], 300));
+  return data.filter((item) => item.id !== article.id).slice(0, count);
+}
+
 export async function getPersonArticles(id: number, slug: string, pageSize: number): Promise<PublicArticleSummary[]> {
   return (await getApi().public.persons.articles(slug, { pageSize }, cached([cacheTags.person(id), cacheTags.articles], 300))).data;
 }

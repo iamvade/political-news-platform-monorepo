@@ -28,7 +28,7 @@ flowchart LR
 | Route | Content | Rendering |
 |---|---|---|
 | `/` | See the homepage rows below | ISR, `revalidate = 60` |
-| `/news/{id}-{slug}` | Breadcrumbs, category and breaking labels, headline, lede, byline, published/updated time, `CorrectionNotice`, cover `<figure>` with credit, body, mentioned people (links), organizations, tags | On-demand ISR: `generateStaticParams() → []`, `revalidate = 300` |
+| `/news/{id}-{slug}` | Breadcrumbs, category and breaking labels, headline, lede, byline, published/updated time, `CorrectionNotice`, cover `<figure>` with credit, body, mentioned people (links), organizations, tags, then "Холбоотой мэдээ" (`RelatedArticles`: 4 compact cards from the same category, or the latest without one; hidden when empty) | On-demand ISR: `generateStaticParams() → []`, `revalidate = 300` |
 | `/person/{id}-{slug}` | Photo or initial, current roles, `PartyBadge`, constituency, bio, recent articles (8, compact), current positions each with a `SourceLink` | On-demand ISR, `revalidate = 300` |
 
 **Homepage rows:**
@@ -43,6 +43,7 @@ flowchart LR
 **Loading and errors:**
 
 - Only the homepage has a `loading.tsx` (`app/(home)/`, using `Skeleton`, which respects reduced motion). Article and person pages deliberately have none: a loading boundary above a page starts streaming with status 200 before the page can call `notFound()`, so a missing article would be a soft 404 (200 + `noindex`), cached by the CDN. Without it, bad URLs, missing records and unpublished articles answer a real **404**. Keep loading boundaries out of detail routes and out of the root `app/`, and put any `<Suspense>` below the `notFound()` check.
+- The article's related rail is such a boundary: `<Suspense fallback={<RelatedArticlesSkeleton />}>` inside the page, after `load()`. It streams in after the article, and a missing article still answers 404 (verified with `next start`). If the related request fails, the rail is left out and the article renders anyway.
 - `error.tsx` has a retry button; `not-found.tsx` handles bad URLs, missing records and unpublished (410) articles.
 
 ### Data layer (`src/lib/data.ts`, server-only)
@@ -57,6 +58,7 @@ Every loader passes `{ cache: 'force-cache', next: { tags, revalidate } }` to th
 | `getArticle(id, slug)` | `/articles/:slug` | `article:{id}` | 300 s |
 | `getPerson(id, slug)` | `/persons/:slug` | `person:{id}`, `people` | 600 s |
 | `getPersonArticles(id, slug, n)` | `/persons/:slug/articles` | `person:{id}`, `articles` | 300 s |
+| `getRelatedArticles(article, n)` | `/articles?category=` | `articles` | 300 s |
 
 - API 404 and 410 become `notFound()`. On other API errors (API down, 5xx), pages already in the cache keep being served, and ISR retries on a later request. A page that has never been rendered answers Next's plain `500 Internal Server Error` (verified with the API stopped); `error.tsx` covers errors during client-side navigation.
 - `duringBuildOr(load, fallback)`: during `next build` (`NEXT_PHASE=phase-production-build`), an unreachable API gives the homepage its "temporarily unavailable" state instead of failing the build. ISR replaces it within a minute. At runtime it calls `load` directly.
@@ -103,13 +105,14 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 - title template `%s | <site name>`
 - Open Graph `website`, `siteName`, `locale: mn_MN`
 - Twitter `summary_large_image`
+- `fb:app_id` when `FACEBOOK_APP_ID` is set
 
 **Articles** (`articleMetadata`):
 
 - canonical URL
 - description from the lede, else the first 160 characters of the body text
 - Open Graph `article` with `publishedTime`, `modifiedTime`, `section` and `tags`
-- image: the largest cover variant up to 1600 px, with width, height and alt
+- image: the largest cover variant up to 1600 px, with width, height and alt. Without a cover: the article's own share card (below)
 - Twitter large card
 
 **Persons** (`personMetadata`):
@@ -118,7 +121,13 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 - Open Graph `profile`
 - the photo when there is one
 
-**Default share card.** `app/opengraph-image.tsx` (re-exported by `twitter-image.tsx`) renders a 1200×630 PNG with `next/og`: the site name and tagline from `mn.json`. Pages without their own image use it.
+**Share cards** (`lib/share-card.tsx`, `renderShareCard`): 1200×630 PNGs made with `next/og`.
+
+- **Default:** `app/opengraph-image.tsx` (re-exported by `twitter-image.tsx`) shows the site name and tagline from `mn.json`. The homepage and profiles without a photo use it.
+- **Article without a cover:** `app/news/[idSlug]/share-card/route.ts` shows the category, the headline (font size steps down with length, cut at a word past 120 characters) and the site name. It loads the article through `getArticle`, so it costs no extra API request, and answers 404 like the page.
+  - Pages link to it as `/news/{id}-{slug}/share-card?v=<12 hex>` (`articleShareImage` in `seo.ts`). `v` is a SHA-256 of the title and category name, so a new headline gets a new image URL and Facebook's per-URL image cache can't show the old one.
+  - Because the URL is versioned, the response is `public, max-age=86400, s-maxage=31536000, immutable`. The handler ignores `v`.
+  - Not cached by Next (it shows as `ƒ` in the build). The CDN keeps it.
 
 `ImageResponse` can't read woff2, so it uses a committed TTF subset of Source Serif 4 Bold (`src/assets/fonts/`, OFL; the rebuild steps are in that folder's README).
 
@@ -127,7 +136,7 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 | Page | Types |
 |---|---|
 | Home | `NewsMediaOrganization` (with corrections, ethics and ownership policy links) and `WebSite` |
-| Article | `NewsArticle`: headline, images, dates, section, keywords, author, publisher by `@id`, `mentions` (Person with profile URL, Organization) |
+| Article | `NewsArticle`: headline, images (cover or share card), dates, section, keywords, author, the full publisher node inline, `mentions` (Person with profile URL, Organization). `BreadcrumbList`: home → article (the category is left out until section pages exist, since every crumb needs a URL) |
 | Person | `Person`: names, image, `jobTitle`, `affiliation` (party), `memberOf` (`OrganizationRole` with start date) |
 
 ### Config (`src/lib/env.ts`, Zod, read on first use)
@@ -137,6 +146,7 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 | `API_URL` | Required; API origin for server components |
 | `SITE_URL` | Public origin for canonical, Open Graph and JSON-LD URLs. **Required in production**; `http://localhost:3000` otherwise |
 | `WEB_REVALIDATE_SECRET` | ≥ 32 chars, the same value as the API's. Without it `/api/revalidate` answers 503 |
+| `FACEBOOK_APP_ID` | Optional, digits only. Adds `<meta property="fb:app_id">` to every page (Sharing Debugger, share insights) |
 
 ## Tech used
 
@@ -182,11 +192,12 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
   3. Send it from the API route handlers that change that data (`revalidateAfterCommit`, after the service returns).
 - **New embed provider:** also extend `EMBED_FIGURE` in `lib/article-html.ts` and the `article.embed` messages (see [articles](articles.md#how-to-maintain)).
 - **New JSON-LD:** build it in `seo.ts` and render it with `<JsonLd>`. Never interpolate JSON into a script tag by hand.
-- **Changing the share card:** if the text gains new characters, rebuild the font subset (`src/assets/fonts/README.md`).
+- **Changing the share cards:** edit `lib/share-card.tsx` (both cards use it). If the text gains new characters, rebuild the font subset (`src/assets/fonts/README.md`). A design change doesn't change the article card's `v`, so the CDN keeps old cards for up to a year; add a version string to the hash input in `articleShareImage` if that matters.
 
 ## Notables
 
-- **Facebook previews:** the cover share image is a WebP variant. Facebook generally accepts WebP `og:image`, but this hasn't been checked in the Sharing Debugger yet. If it's rejected, the media pipeline needs a JPEG share variant.
+- **Facebook previews:** articles with a cover share a WebP variant. Facebook's WebP support is unreliable (community reports of Sharing Debugger errors), and PRD §11.4 asks for a JPEG of 1200×630. A JPEG share variant in the media pipeline is the next change (follow-ups). Cover-less articles already get a PNG headline card.
+- The share card font is a subset (Latin + Mongolian Cyrillic). Characters outside it, such as emoji, render as blanks or are fetched by `next/og` at render time.
 - An unpublished article returns the 404 page, not a 410 status: App Router pages can't set 410. The API still returns 410.
 - Person URLs moved from `/person/{slug}` to `/person/{id}-{slug}` (PRD §7, id canonical) so the page knows its `person:{id}` tag before fetching. The URL table in PRD §7 still shows `/person/[slug]`.
 - The organization JSON-LD and the footer link to `/corrections`, `/editorial-policy` and `/ownership`, which are not built yet (404 until then).
@@ -195,6 +206,8 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
 - The API's `Cache-Control` on `/v1/public/*` doesn't affect Next's data cache, which uses `force-cache` with tags.
 - **Slug changes:** a request with an old slug and the right id reaches the API with the old slug and 404s. Redirects on slug change are a follow-up (see [articles](articles.md#notables)).
 - Follow-ups:
+  - **JPEG share variant for covers** (API `media-variants` job + `shareUrl` in `publicMediaSchema` + backfill), then `og:image` prefers it
+  - a category crumb in `BreadcrumbList` once section pages exist; `BreadcrumbList` on person pages
   - party, tag, category, bill and search pages
   - CSP (`frame-src https://www.youtube-nocookie.com https://www.facebook.com`)
   - a 410 response for unpublished articles (middleware)
@@ -205,10 +218,10 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
 
 **Web** (`apps/web/src/`):
 
-- pages: `app/(home)/{page,loading}.tsx`, `app/{layout,error,not-found,opengraph-image,twitter-image}.tsx`, `app/news/[idSlug]/`, `app/person/[idSlug]/`
+- pages: `app/(home)/{page,loading}.tsx`, `app/{layout,error,not-found,opengraph-image,twitter-image}.tsx`, `app/news/[idSlug]/` (with `share-card/route.ts`), `app/person/[idSlug]/`
 - revalidation: `app/api/revalidate/route.ts`
-- data and SEO: `lib/{data,env,cache-tags,seo,site,routes,article-html}.ts`
-- components: `components/{article-body,embed-activator,json-ld,skeleton,empty-state,section-heading}.tsx`, `components/home/`
+- data and SEO: `lib/{data,env,cache-tags,seo,site,routes,article-html}.ts`, `lib/share-card.tsx`
+- components: `components/{article-body,embed-activator,json-ld,related-articles,skeleton,empty-state,section-heading}.tsx`, `components/home/`
 - font: `assets/fonts/`
 
 **API:**
@@ -217,4 +230,4 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
 - `apps/api/src/modules/legislation/public.{routes,service}.ts` (`/parliament/week`)
 
 ---
-Last updated: 2026-10-07 — initial version: homepage, article and person pages, tag revalidation, SEO, JSON-LD, share card.
+Last updated: 2026-10-08 — article page: related rail with skeleton, per-article share card, `fb:app_id` (`FACEBOOK_APP_ID`), inline publisher and `BreadcrumbList` JSON-LD. Earlier: initial version (homepage, article and person pages, tag revalidation, SEO, JSON-LD, share card).

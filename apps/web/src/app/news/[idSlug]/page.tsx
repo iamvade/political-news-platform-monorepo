@@ -1,16 +1,19 @@
+import type { PublicArticle, PublicArticleSummary } from '@news/shared/schemas';
 import type { Metadata } from 'next';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { ArticleBody } from '@/components/article-body';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { CorrectionNotice } from '@/components/correction-notice';
 import { JsonLd } from '@/components/json-ld';
+import { RelatedArticles, RelatedArticlesSkeleton } from '@/components/related-articles';
 import { Tag } from '@/components/tag';
-import { getArticle } from '@/lib/data';
+import { getArticle, getRelatedArticles } from '@/lib/data';
 import { imageSources } from '@/lib/media';
 import { parseIdSlug, routes } from '@/lib/routes';
-import { articleMetadata, newsArticleJsonLd } from '@/lib/seo';
+import { articleMetadata, breadcrumbJsonLd, newsArticleJsonLd } from '@/lib/seo';
 import { getSiteInfo } from '@/lib/site';
 
 // ISR on demand: nothing is prerendered at build; each article renders on first visit, is cached with the
@@ -30,6 +33,18 @@ async function load(params: Props['params']) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return articleMetadata(await load(params), await getSiteInfo());
+}
+
+/** The related rail is extra: if its request fails, the article still renders without it. */
+async function Related({ article }: { article: PublicArticle }) {
+  let articles: PublicArticleSummary[];
+  try {
+    articles = await getRelatedArticles(article, 4);
+  } catch (err) {
+    console.warn('Related articles unavailable', err instanceof Error ? err.message : err);
+    return null;
+  }
+  return <RelatedArticles articles={articles} />;
 }
 
 export default async function ArticlePage({ params }: Props) {
@@ -123,7 +138,23 @@ export default async function ArticlePage({ params }: Props) {
           </footer>
         )}
       </article>
-      <JsonLd data={newsArticleJsonLd(article, site)} />
+      {/* Streams in after the article. This boundary is inside the page, below load()'s notFound(), so a missing
+          article still answers a real 404 (see docs/technical/features/public-site.md, "Loading and errors"). */}
+      <div className="mx-auto mt-12 max-w-content">
+        <Suspense fallback={<RelatedArticlesSkeleton />}>
+          <Related article={article} />
+        </Suspense>
+      </div>
+      <JsonLd
+        data={[
+          newsArticleJsonLd(article, site),
+          // No category crumb: it needs a URL, and section pages don't exist yet.
+          breadcrumbJsonLd(site, [
+            { name: t('breadcrumbHome'), path: routes.home },
+            { name: article.title, path: routes.article(article) },
+          ]),
+        ]}
+      />
     </main>
   );
 }

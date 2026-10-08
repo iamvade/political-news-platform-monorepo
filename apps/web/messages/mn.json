@@ -52,6 +52,7 @@
     "people": "Холбогдох хүмүүс",
     "organizations": "Холбогдох байгууллага",
     "tags": "Шошго",
+    "related": "Холбоотой мэдээ",
     "embed": {
       "youtube": "YouTube видео тоглуулах",
       "facebook": "Facebook нийтлэл харах",
@@ -113,6 +114,8 @@
       "lead": "Гол (lead)",
       "standard": "Энгийн (standard)",
       "compact": "Жижиг (compact)",
+      "related": "Холбоотой мэдээ (RelatedArticles)",
+      "relatedLoading": "Ачаалж буй үед (RelatedArticlesSkeleton)",
       "inlineSource": "SourceLink — текстэн",
       "iconSource": "SourceLink — дүрс"
     },

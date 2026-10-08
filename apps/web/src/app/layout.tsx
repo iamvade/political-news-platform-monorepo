@@ -5,7 +5,7 @@ import { Inter, Source_Serif_4 } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { siteUrl } from '@/lib/env';
+import { serverEnv, siteUrl } from '@/lib/env';
 import { themeScript } from '@/lib/theme';
 import './globals.css';
 
@@ -28,12 +28,14 @@ const sans = Inter({
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('meta');
   const site = siteUrl();
+  const facebookAppId = serverEnv().FACEBOOK_APP_ID;
   return {
     metadataBase: new URL(site),
     title: { default: t('title'), template: `%s | ${t('title')}` },
     description: t('description'),
     openGraph: { type: 'website', siteName: t('title'), locale: 'mn_MN', title: t('title'), description: t('description'), url: `${site}/` },
     twitter: { card: 'summary_large_image', title: t('title'), description: t('description') },
+    ...(facebookAppId && { facebook: { appId: facebookAppId } }),
   };
 }
 
