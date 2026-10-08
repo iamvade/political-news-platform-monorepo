@@ -31,6 +31,13 @@ describe('homepage sections', () => {
     expect(screen.getByText('Шинэ мэдээ алга.')).toBeInTheDocument();
   });
 
+  it('a category section links to its section page, named for screen readers', () => {
+    renderWithIntl(<CategorySection section={{ category: { slug: 'uls-tor', nameMn: 'Улс төр', nameEn: null }, articles: [articleSummary()] }} />);
+    const link = screen.getByRole('link', { name: 'Улс төр: бүх мэдээ' });
+    expect(link).toHaveAttribute('href', '/section/uls-tor');
+    expect(link).toHaveTextContent('Бүгдийг үзэх');
+  });
+
   it('a category with no articles renders nothing', () => {
     const { container } = renderWithIntl(<CategorySection section={{ category: { slug: 'uls-tor', nameMn: 'Улс төр', nameEn: null }, articles: [] }} />);
     expect(container).toBeEmptyDOMElement();

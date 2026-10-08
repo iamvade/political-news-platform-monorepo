@@ -20,7 +20,7 @@ Services never talk to BullMQ directly; they call the `Jobs` interface (`app.job
 
 **Idempotency**: processors re-check the database. `publishIfDue` locks the article row (`FOR UPDATE`) and publishes only if it is still `scheduled`, the job's `scheduledAt` matches (stale jobs after a reschedule do nothing), and it is due (5 s early tolerance). The publish revision is attributed to whoever scheduled it (sweep: the last `schedule` revision's editor, else the author). Media processing skips rows that are already `ready`.
 
-**Web cache tags** (names shared with `apps/web/src/lib/cache-tags.ts`): `homepage`, `articles`, `people`, `parliament`, `article:{id}`, `person:{id}`. Which admin change sends which tag is listed in [public-site](public-site.md#revalidation-srcappapirevalidateroutets). `revalidateAfterCommit(app, tags)` is called in route handlers after the service returns (so after commit); it logs and swallows enqueue errors, because the data is saved and the pages' time-based revalidation is the fallback. Imports send tags only when not `dryRun`.
+**Web cache tags** (names shared with `apps/web/src/lib/cache-tags.ts`): `homepage`, `articles`, `people`, `parliament`, `article:{id}`, `person:{id}`, and `category:{slug}` (reserved: nothing sends it until categories can be edited). Which admin change sends which tag is listed in [public-site](public-site.md#revalidation-srcappapirevalidateroutets). `revalidateAfterCommit(app, tags)` is called in route handlers after the service returns (so after commit); it logs and swallows enqueue errors, because the data is saved and the pages' time-based revalidation is the fallback. Imports send tags only when not `dryRun`.
 
 Workers start in `server.ts` when `WORKERS_ENABLED=true` (`jobs/workers.ts` → `registerWorkers`), before `listen()`, and close on app shutdown. To split later: run the same build twice, API with `WORKERS_ENABLED=false`, worker with `true`.
 
@@ -54,4 +54,4 @@ docker exec news-v2-redis-1 redis-cli -n 0 KEYS 'bull:*' | head
 `apps/api/src/jobs/{types,queue,workers}.ts`, `apps/api/src/jobs/processors/*.ts`, `apps/api/src/plugins/jobs.ts`, `apps/api/src/test/fake-jobs.ts`.
 
 ---
-Last updated: 2026-10-07 — `enqueueRevalidate(tags)` replaces `enqueueHomepageChanged`; `home` tag renamed `homepage`, articles also send `articles`; data edits revalidate person/people/parliament tags.
+Last updated: 2026-10-08 — `category:{slug}` tag reserved. Earlier (2026-10-07): `enqueueRevalidate(tags)` replaces `enqueueHomepageChanged`; `home` tag renamed `homepage`, articles also send `articles`; data edits revalidate person/people/parliament tags.

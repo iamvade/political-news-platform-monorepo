@@ -37,12 +37,14 @@ export const PARTIES: PartyRef[] = [
   { slug: 'independent', nameMn: 'Бие даагч', shortNameMn: null, color: null },
 ];
 
+export const CATEGORY = { slug: 'uls-tor', nameMn: 'Улс төр', nameEn: null };
+
 const base: Omit<PublicArticleSummary, 'id' | 'slug' | 'title'> = {
   lede: null,
   isBreaking: false,
   publishedAt: '2026-10-07T01:30:00.000Z',
   updatedAt: '2026-10-07T01:30:00.000Z',
-  category: { slug: 'uls-tor', nameMn: 'Улс төр', nameEn: null },
+  category: CATEGORY,
   cover: null,
 };
 

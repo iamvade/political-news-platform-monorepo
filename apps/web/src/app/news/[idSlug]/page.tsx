@@ -63,7 +63,7 @@ export default async function ArticlePage({ params }: Props) {
         <Breadcrumbs
           items={[
             { label: t('breadcrumbHome'), href: routes.home },
-            ...(article.category ? [{ label: article.category.nameMn }] : []),
+            ...(article.category ? [{ label: article.category.nameMn, href: routes.section(article.category.slug) }] : []),
             { label: article.title },
           ]}
         />
@@ -71,7 +71,11 @@ export default async function ArticlePage({ params }: Props) {
           {(article.isBreaking || article.category) && (
             <p className="flex flex-wrap items-center gap-2">
               {article.isBreaking && <span className="type-label rounded-sm bg-breaking px-1.5 py-0.5 text-breaking-ink">{t('breaking')}</span>}
-              {article.category && <span className="type-label text-accent">{article.category.nameMn}</span>}
+              {article.category && (
+                <Link href={routes.section(article.category.slug)} className="type-label text-accent hover:underline">
+                  {article.category.nameMn}
+                </Link>
+              )}
             </p>
           )}
           <h1 className="type-display text-ink">{article.title}</h1>
@@ -148,9 +152,9 @@ export default async function ArticlePage({ params }: Props) {
       <JsonLd
         data={[
           newsArticleJsonLd(article, site),
-          // No category crumb: it needs a URL, and section pages don't exist yet.
           breadcrumbJsonLd(site, [
             { name: t('breadcrumbHome'), path: routes.home },
+            ...(article.category ? [{ name: article.category.nameMn, path: routes.section(article.category.slug) }] : []),
             { name: article.title, path: routes.article(article) },
           ]),
         ]}

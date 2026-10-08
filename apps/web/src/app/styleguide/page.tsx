@@ -9,9 +9,10 @@ import { Pagination } from '@/components/pagination';
 import { PartyBadge } from '@/components/party-badge';
 import { PersonCard } from '@/components/person-card';
 import { RelatedArticles, RelatedArticlesSkeleton } from '@/components/related-articles';
+import { SectionArticles, SectionArticlesSkeleton } from '@/components/section-articles';
 import { SourceLink } from '@/components/source-link';
 import { Tag } from '@/components/tag';
-import { ALPHABET_LOWER, ALPHABET_UPPER, ARTICLES, CORRECTIONS, CRUMBS, GLYPH_LINE, PANGRAM, PARTIES, PEOPLE, SOURCE_URL, TAGS, TYPE_SAMPLES } from './samples';
+import { ALPHABET_LOWER, ALPHABET_UPPER, ARTICLES, CATEGORY, CORRECTIONS, CRUMBS, GLYPH_LINE, PANGRAM, PARTIES, PEOPLE, SOURCE_URL, TAGS, TYPE_SAMPLES } from './samples';
 
 // Dev/preview tool: 404 in production unless STYLEGUIDE_ENABLED=true; never indexed.
 const enabled = () => process.env.NODE_ENV !== 'production' || process.env.STYLEGUIDE_ENABLED === 'true';
@@ -175,6 +176,15 @@ export default async function StyleguidePage() {
           <div className="max-w-content">
             <RelatedArticlesSkeleton />
           </div>
+        </Specimen>
+        <Specimen label={t('variants.section')}>
+          <SectionArticles category={CATEGORY} articles={ARTICLES} page={1} totalPages={3} />
+        </Specimen>
+        <Specimen label={t('variants.sectionEmpty')}>
+          <SectionArticles category={CATEGORY} articles={[]} page={1} totalPages={0} />
+        </Specimen>
+        <Specimen label={t('variants.sectionLoading')}>
+          <SectionArticlesSkeleton />
         </Specimen>
       </Section>
 

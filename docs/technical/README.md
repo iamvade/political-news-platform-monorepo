@@ -16,7 +16,7 @@ How the platform is built, how to run it, and how to keep it healthy. The produc
 | `apps/api` — Fastify API + BullMQ workers | **Built** | [projects/api.md](projects/api.md) |
 | `packages/shared` — Zod contracts, content renderer, translit, API client | **Built** | [projects/shared.md](projects/shared.md) |
 | `apps/admin` — newsroom SPA (React + Vite + shadcn/ui) | **Built** (article editor, political data screens, homepage editor; organizations and users screens pending) | [projects/admin.md](projects/admin.md) |
-| `apps/web` — public site (Next.js) | **Built**: design system, homepage, article and person pages (party, tag, bill and search pages pending) | [projects/web.md](projects/web.md) |
+| `apps/web` — public site (Next.js) | **Built**: design system, homepage, article, person and section pages (party, tag, bill and search pages pending) | [projects/web.md](projects/web.md) |
 | `apps/mobile` — app (Expo) | Scaffold | [projects/mobile.md](projects/mobile.md) |
 
 ### Features
@@ -32,7 +32,7 @@ How the platform is built, how to run it, and how to keep it healthy. The produc
 | Media: uploads, WebP variants, library | [features/media.md](features/media.md) |
 | Homepage layout: editor curation, versions, public endpoint | [features/homepage.md](features/homepage.md) |
 | Web design system: fonts, tokens, themes, components, /styleguide | [features/design-system.md](features/design-system.md) |
-| Public site: homepage, article and person pages, tag revalidation, SEO, JSON-LD | [features/public-site.md](features/public-site.md) |
+| Public site: homepage, article, person and section pages, tag revalidation, SEO, JSON-LD | [features/public-site.md](features/public-site.md) |
 
 ## Architecture
 
@@ -102,4 +102,4 @@ End each page with `Last updated: YYYY-MM-DD — <what changed>`.
 Any change that affects behaviour, setup, env vars, routes, schema, jobs, dependencies or a gotcha updates the matching page **in the same change** (see the Documentation section of `CLAUDE.md`). New project or feature → new page from the template, linked above. Describe what **is**; plans belong in the PRD or under "Notables → follow-ups".
 
 ---
-Last updated: 2026-10-07 — public site page; web status; tag revalidation in the architecture notes.
+Last updated: 2026-10-08 — section pages in the web status and public site entries. Earlier (2026-10-07): public site page; web status; tag revalidation in the architecture notes.

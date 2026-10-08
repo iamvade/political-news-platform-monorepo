@@ -9,6 +9,8 @@ export const cacheTags = {
   parliament: 'parliament',
   article: (id: number) => `article:${id}`,
   person: (id: number) => `person:${id}`,
+  /** A section page (category name). Not sent by the API yet: categories are seed-only, with no admin edits. */
+  category: (slug: string) => `category:${slug}`,
 } as const;
 
 /** What /api/revalidate accepts: `name` or `name:value` (lowercase, digits, dashes). */

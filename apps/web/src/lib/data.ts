@@ -60,6 +60,22 @@ export async function getRelatedArticles(
   return data.filter((item) => item.id !== article.id).slice(0, count);
 }
 
+/** A category as the public API returns it (slug and names). */
+export type Category = NonNullable<PublicArticleSummary['category']>;
+
+/** The category for `/section/{slug}`. Names change rarely (categories are seed-only), so it is kept an hour. */
+export async function getCategory(slug: string): Promise<Category> {
+  return (await notFoundOn404(getApi().public.categories.get(slug, cached([cacheTags.category(slug)], 3600)))).data;
+}
+
+/** Articles per section page (the API's default page size). */
+export const SECTION_PAGE_SIZE = 20;
+
+/** One page of a section's articles, newest first, with pagination totals. */
+export async function getCategoryArticles(slug: string, page: number, pageSize = SECTION_PAGE_SIZE) {
+  return notFoundOn404(getApi().public.categories.articles(slug, { page, pageSize }, cached([cacheTags.category(slug), cacheTags.articles], 300)));
+}
+
 export async function getPersonArticles(id: number, slug: string, pageSize: number): Promise<PublicArticleSummary[]> {
   return (await getApi().public.persons.articles(slug, { pageSize }, cached([cacheTags.person(id), cacheTags.articles], 300))).data;
 }

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { PublicArticle, PublicPerson } from '@news/shared/schemas';
+import type { PublicArticle, PublicArticleSummary, PublicPerson } from '@news/shared/schemas';
 import type { Metadata } from 'next';
 import type { PublicMedia } from './media';
 import { routes } from './routes';
@@ -27,15 +27,21 @@ export const absoluteUrl = (site: SiteInfo, path: string) => new URL(path, `${si
 export const defaultShareImage = (site: SiteInfo): ShareImage => ({ url: absoluteUrl(site, '/opengraph-image'), width: 1200, height: 630, alt: site.name });
 
 /**
- * The article's generated headline card. `v` is a hash of the text on the card: a new headline gets a new
- * image URL, so Facebook's per-URL image cache never shows a stale one (PRD §11.4).
+ * `v` for a generated card's URL: a hash of the text on the card. New text gets a new image URL, so
+ * Facebook's per-URL image cache never shows a stale card (PRD §11.4).
  */
+const cardVersion = (...texts: string[]) => createHash('sha256').update(texts.join('\n')).digest('hex').slice(0, 12);
+
+/** The article's generated headline card (for articles without a cover). */
 export function articleShareImage(article: PublicArticle, site: SiteInfo): ShareImage {
-  const version = createHash('sha256')
-    .update(`${article.title}\n${article.category?.nameMn ?? ''}`)
-    .digest('hex')
-    .slice(0, 12);
+  const version = cardVersion(article.title, article.category?.nameMn ?? '');
   return { url: absoluteUrl(site, `${routes.articleShareCard(article)}?v=${version}`), width: 1200, height: 630, alt: article.title };
+}
+
+/** The section's generated card (category name + site name). */
+export function categoryShareImage(category: { slug: string; nameMn: string }, site: SiteInfo): ShareImage {
+  const url = absoluteUrl(site, `${routes.sectionShareCard(category.slug)}?v=${cardVersion(category.nameMn)}`);
+  return { url, width: 1200, height: 630, alt: category.nameMn };
 }
 
 /** Largest WebP variant up to 1600px wide, or null when the media has no public URL. */
@@ -90,6 +96,26 @@ export function articleMetadata(article: PublicArticle, site: SiteInfo): Metadat
   };
 }
 
+/**
+ * A section page. Every page of the listing is canonical to itself (PRD §11.3); `title` and `description`
+ * come from mn.json (the page number is in the title from page 2 on).
+ */
+export function sectionMetadata(
+  category: { slug: string; nameMn: string },
+  page: { page: number; title: string; description: string },
+  site: SiteInfo,
+): Metadata {
+  const url = absoluteUrl(site, routes.section(category.slug, page.page));
+  const image = categoryShareImage(category, site);
+  return {
+    title: page.title,
+    description: page.description,
+    alternates: { canonical: url },
+    openGraph: { type: 'website', url, title: page.title, description: page.description, siteName: site.name, locale: 'mn_MN', images: [image] },
+    twitter: { card: 'summary_large_image', title: page.title, description: page.description, images: [image.url] },
+  };
+}
+
 /** "УИХ-ын гишүүн, МАН" — current roles and party, for descriptions. */
 export function personSummary(person: PublicPerson): string {
   const roles = person.currentPositions.filter((p) => p.organization.type !== 'party').map((p) => p.titleMn);
@@ -115,6 +141,7 @@ export function personMetadata(person: PublicPerson, site: SiteInfo): Metadata {
 type JsonLd = Record<string, unknown>;
 
 const organizationId = (site: SiteInfo) => `${site.url}/#organization`;
+const websiteId = (site: SiteInfo) => `${site.url}/#website`;
 
 /** The publisher (this news outlet), without `@context` so it can sit inline in other nodes. */
 function organizationNode(site: SiteInfo): JsonLd {
@@ -147,12 +174,45 @@ export function websiteJsonLd(site: SiteInfo): JsonLd {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    '@id': `${site.url}/#website`,
+    '@id': websiteId(site),
     url: absoluteUrl(site, '/'),
     name: site.name,
     description: site.description,
     inLanguage: 'mn',
     publisher: { '@id': organizationId(site) },
+  };
+}
+
+/**
+ * A listing page (a section): `CollectionPage` whose main entity is the list of articles on this page.
+ * `offset` is the number of articles on earlier pages, so positions continue across pages.
+ */
+export function collectionPageJsonLd(
+  site: SiteInfo,
+  page: { path: string; name: string; description: string },
+  articles: PublicArticleSummary[],
+  offset: number,
+): JsonLd {
+  const url = absoluteUrl(site, page.path);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': url,
+    url,
+    name: page.name,
+    description: page.description,
+    inLanguage: 'mn',
+    isPartOf: { '@id': websiteId(site) },
+    publisher: organizationNode(site),
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: articles.map((article, index) => ({
+        '@type': 'ListItem',
+        position: offset + index + 1,
+        url: absoluteUrl(site, routes.article(article)),
+        name: article.title,
+      })),
+    },
   };
 }
 

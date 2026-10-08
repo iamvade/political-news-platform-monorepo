@@ -2,12 +2,12 @@
 
 ## Overview
 
-**Homepage, article and person pages built.** This is the Next.js App Router site. It has:
+**Homepage, article, person and section pages built.** This is the Next.js App Router site. It has:
 - the [design system](../features/design-system.md): fonts, colour tokens with light and dark themes, components, `/styleguide`
 - the site header and footer around every page
-- the [public pages](../features/public-site.md): `/`, `/news/{id}-{slug}`, `/person/{id}-{slug}`, with tagged data caching, `/api/revalidate`, SEO metadata, JSON-LD and a generated share image
+- the [public pages](../features/public-site.md): `/`, `/news/{id}-{slug}`, `/person/{id}-{slug}`, `/section/{slug}[/{n}]`, with tagged data caching, `/api/revalidate`, SEO metadata, JSON-LD and a generated share image
 
-Party, tag, category, bill and search pages aren't built yet; their public API routes mostly exist ([public-api](../features/public-api.md)).
+Party, tag, bill and search pages aren't built yet; their public API routes mostly exist ([public-api](../features/public-api.md)).
 
 ## How it works
 
@@ -67,7 +67,7 @@ pnpm -F @news/web start
 
 ## Key files
 
-`src/app/(home)/`, `src/app/{layout,error,not-found,opengraph-image,globals.css}`, `src/app/news/`, `src/app/person/`, `src/app/api/revalidate/`, `src/app/styleguide/`, `src/components/`, `src/lib/{env,api,data,cache-tags,seo,site,article-html,theme,routes,media,pagination}.ts`, `src/lib/share-card.tsx`, `src/assets/fonts/`, `src/design/`, `src/i18n/request.ts`, `src/test/`, `messages/mn.json`, `next.config.ts`, `vitest.config.ts`.
+`src/app/(home)/`, `src/app/{layout,error,not-found,opengraph-image,globals.css}`, `src/app/news/`, `src/app/person/`, `src/app/section/`, `src/app/api/revalidate/`, `src/app/styleguide/`, `src/components/`, `src/lib/{env,api,data,cache-tags,seo,site,article-html,theme,routes,media,pagination}.ts`, `src/lib/share-card.tsx`, `src/assets/fonts/`, `src/design/`, `src/i18n/request.ts`, `src/test/`, `messages/mn.json`, `next.config.ts`, `vitest.config.ts`.
 
 ---
-Last updated: 2026-10-08 — `FACEBOOK_APP_ID`; article share cards and related rail ([public-site](../features/public-site.md)). Earlier: homepage, article and person pages; `/api/revalidate`; `SITE_URL` and `WEB_REVALIDATE_SECRET`; click-to-load embeds; design system, /styleguide.
+Last updated: 2026-10-08 — section pages ([public-site](../features/public-site.md)). Earlier the same day: `FACEBOOK_APP_ID`; article share cards and related rail ([public-site](../features/public-site.md)). Earlier: homepage, article and person pages; `/api/revalidate`; `SITE_URL` and `WEB_REVALIDATE_SECRET`; click-to-load embeds; design system, /styleguide.

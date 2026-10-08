@@ -1,4 +1,4 @@
-# Public site: homepage, article and person pages
+# Public site: homepage, article, person and section pages
 
 ## Overview
 
@@ -7,10 +7,11 @@
 - `/`: the homepage
 - `/news/{id}-{slug}`: an article
 - `/person/{id}-{slug}`: a person profile
+- `/section/{slug}` and `/section/{slug}/{n}`: a category's articles, paginated
 
 They're server components that read the public API through the shared client and Next's data cache. Every fetch is tagged per entity, and the API's revalidate job refreshes those tags on publish and on data edits.
 
-Every page has full SEO metadata (canonical, Open Graph, Twitter) and JSON-LD. Party, tag, section, bill and search pages are not built yet.
+Every page has full SEO metadata (canonical, Open Graph, Twitter) and JSON-LD. Party, tag, bill and search pages are not built yet.
 
 ## How it works
 
@@ -30,20 +31,25 @@ flowchart LR
 | `/` | See the homepage rows below | ISR, `revalidate = 60` |
 | `/news/{id}-{slug}` | Breadcrumbs, category and breaking labels, headline, lede, byline, published/updated time, `CorrectionNotice`, cover `<figure>` with credit, body, mentioned people (links), organizations, tags, then "Холбоотой мэдээ" (`RelatedArticles`: 4 compact cards from the same category, or the latest without one; hidden when empty) | On-demand ISR: `generateStaticParams() → []`, `revalidate = 300` |
 | `/person/{id}-{slug}` | Photo or initial, current roles, `PartyBadge`, constituency, bio, recent articles (8, compact), current positions each with a `SourceLink` | On-demand ISR, `revalidate = 300` |
+| `/section/{slug}` | `SectionHeader` (breadcrumbs, name), then `SectionArticles`: a lead card with 4 compact cards beside it, a grid of standard cards, `Pagination`. Empty section: `EmptyState` with a link home | On-demand ISR, `revalidate = 300` |
+| `/section/{slug}/{n}` | Same header (page number as the last crumb) and a grid of 20 standard cards. `/section/{slug}/1` 308-redirects to `/section/{slug}`; past the last page is 404 | On-demand ISR, `revalidate = 300` |
 
 **Homepage rows:**
 
 - **Hero and featured:** from `GET /v1/public/homepage` ([homepage](homepage.md)), as a lead card plus compact cards.
 - **"Шинэ мэдээ":** 10 of the latest articles, leaving out the ones already shown.
 - **"Парламент энэ долоо хоногт":** bill stages and roll calls from the last 7 days, from `GET /v1/public/parliament/week`. Each tally is written out in numbers (the bar is decorative), and each item has a source link.
-- **Category sections:** in the layout's order. A section with no articles is hidden.
+- **Category sections:** in the layout's order, each heading with a "Бүгдийг үзэх" link to its section page (named "{category}: бүх мэдээ" for screen readers). A section with no articles is hidden.
 
 **URLs.** Both detail routes parse `{id}-{slug}` with `parseIdSlug` (`lib/routes.ts`). The id is canonical (PRD §7) and is in the cache tag. If the API returns a record with a different id, the page answers 404.
+
+Section URLs have no id (PRD §7 `/section/[slug]`; categories are seed-only, so their slugs don't change). `parseSlug` and `parsePage` reject malformed segments (uppercase, `_`, `02`, above 10 000) with a 404 before any API request. Pages 2+ are a path segment, not `?page=`: reading `searchParams` would make the page dynamic (`Cache-Control: private, no-store`), so it couldn't be ISR or cached by the CDN.
 
 **Loading and errors:**
 
 - Only the homepage has a `loading.tsx` (`app/(home)/`, using `Skeleton`, which respects reduced motion). Article and person pages deliberately have none: a loading boundary above a page starts streaming with status 200 before the page can call `notFound()`, so a missing article would be a soft 404 (200 + `noindex`), cached by the CDN. Without it, bad URLs, missing records and unpublished articles answer a real **404**. Keep loading boundaries out of detail routes and out of the root `app/`, and put any `<Suspense>` below the `notFound()` check.
 - The article's related rail is such a boundary: `<Suspense fallback={<RelatedArticlesSkeleton />}>` inside the page, after `load()`. It streams in after the article, and a missing article still answers 404 (verified with `next start`). If the related request fails, the rail is left out and the article renders anyway.
+- Section page 1 streams its article list under the header: `<Suspense fallback={<SectionArticlesSkeleton />}>` after `loadCategory()`'s `notFound()`. List errors are not caught, so ISR keeps the last good page instead of caching an empty one. Pages 2+ render without a boundary: whether page n exists is only known from the list total, and a page past the end must answer a real 404 before anything streams.
 - `error.tsx` has a retry button; `not-found.tsx` handles bad URLs, missing records and unpublished (410) articles.
 
 ### Data layer (`src/lib/data.ts`, server-only)
@@ -59,6 +65,8 @@ Every loader passes `{ cache: 'force-cache', next: { tags, revalidate } }` to th
 | `getPerson(id, slug)` | `/persons/:slug` | `person:{id}`, `people` | 600 s |
 | `getPersonArticles(id, slug, n)` | `/persons/:slug/articles` | `person:{id}`, `articles` | 300 s |
 | `getRelatedArticles(article, n)` | `/articles?category=` | `articles` | 300 s |
+| `getCategory(slug)` | `/categories/:slug` | `category:{slug}` | 3600 s |
+| `getCategoryArticles(slug, page)` | `/categories/:slug/articles` (20 per page) | `category:{slug}`, `articles` | 300 s |
 
 - API 404 and 410 become `notFound()`. On other API errors (API down, 5xx), pages already in the cache keep being served, and ISR retries on a later request. A page that has never been rendered answers Next's plain `500 Internal Server Error` (verified with the API stopped); `error.tsx` covers errors during client-side navigation.
 - `duringBuildOr(load, fallback)`: during `next build` (`NEXT_PHASE=phase-production-build`), an unreachable API gives the homepage its "temporarily unavailable" state instead of failing the build. ISR replaces it within a minute. At runtime it calls `load` directly.
@@ -88,6 +96,7 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 | Organization edit, position import | `people` |
 | Bills, sponsors, stages, votes, vote import | `parliament` |
 | Correction | the corrected record's tag (`article:{id}`, `person:{id}`, `parliament`, else `people`) |
+| Category | nothing yet: categories are seed-only (no admin CRUD). `category:{slug}` is in both maps for when that exists; until then a renamed category shows within an hour |
 
 ### Article body and embeds
 
@@ -121,6 +130,13 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 - Open Graph `profile`
 - the photo when there is one
 
+**Sections** (`sectionMetadata`):
+
+- title: the category name, or "{category} — {n}-р хуудас" from page 2 (`section.pageTitle`)
+- description from `section.description`
+- canonical: every page to itself (PRD §11.3)
+- Open Graph `website`, the section's share card (below), Twitter large card
+
 **Share cards** (`lib/share-card.tsx`, `renderShareCard`): 1200×630 PNGs made with `next/og`.
 
 - **Default:** `app/opengraph-image.tsx` (re-exported by `twitter-image.tsx`) shows the site name and tagline from `mn.json`. The homepage and profiles without a photo use it.
@@ -128,6 +144,7 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
   - Pages link to it as `/news/{id}-{slug}/share-card?v=<12 hex>` (`articleShareImage` in `seo.ts`). `v` is a SHA-256 of the title and category name, so a new headline gets a new image URL and Facebook's per-URL image cache can't show the old one.
   - Because the URL is versioned, the response is `public, max-age=86400, s-maxage=31536000, immutable`. The handler ignores `v`.
   - Not cached by Next (it shows as `ƒ` in the build). The CDN keeps it.
+- **Section:** `app/section/[slug]/share-card/route.ts` shows the category name, the site tagline and the site name, at `/section/{slug}/share-card?v=<hash of the name>` (`categoryShareImage`). Same caching as the article card. The static `share-card` segment wins over the sibling `[page]`.
 
 `ImageResponse` can't read woff2, so it uses a committed TTF subset of Source Serif 4 Bold (`src/assets/fonts/`, OFL; the rebuild steps are in that folder's README).
 
@@ -136,7 +153,8 @@ Each distinct tag gets `revalidateTag(tag, 'max')`. The cached entry is marked s
 | Page | Types |
 |---|---|
 | Home | `NewsMediaOrganization` (with corrections, ethics and ownership policy links) and `WebSite` |
-| Article | `NewsArticle`: headline, images (cover or share card), dates, section, keywords, author, the full publisher node inline, `mentions` (Person with profile URL, Organization). `BreadcrumbList`: home → article (the category is left out until section pages exist, since every crumb needs a URL) |
+| Article | `NewsArticle`: headline, images (cover or share card), dates, section, keywords, author, the full publisher node inline, `mentions` (Person with profile URL, Organization). `BreadcrumbList`: home → section (when the article has a category) → article |
+| Section | `CollectionPage` (`isPartOf` the WebSite, publisher inline) whose `mainEntity` is an `ItemList` of the page's articles; positions continue across pages (page 2 starts at 21). `BreadcrumbList`: home → section (→ "n-р хуудас") |
 | Person | `Person`: names, image, `jobTitle`, `affiliation` (party), `memberOf` (`OrganizationRole` with start date) |
 
 ### Config (`src/lib/env.ts`, Zod, read on first use)
@@ -207,8 +225,10 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
 - **Slug changes:** a request with an old slug and the right id reaches the API with the old slug and 404s. Redirects on slug change are a follow-up (see [articles](articles.md#notables)).
 - Follow-ups:
   - **JPEG share variant for covers** (API `media-variants` job + `shareUrl` in `publicMediaSchema` + backfill), then `og:image` prefers it
-  - a category crumb in `BreadcrumbList` once section pages exist; `BreadcrumbList` on person pages
-  - party, tag, category, bill and search pages
+  - `BreadcrumbList` on person pages
+  - party, tag, bill and search pages (the tag page can reuse `SectionArticles`; the API's tag routes match the category ones)
+  - RSS per section (PRD X2)
+  - send `category:{slug}` from category CRUD once it exists
   - CSP (`frame-src https://www.youtube-nocookie.com https://www.facebook.com`)
   - a 410 response for unpublished articles (middleware)
   - sitemap and RSS
@@ -218,10 +238,10 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
 
 **Web** (`apps/web/src/`):
 
-- pages: `app/(home)/{page,loading}.tsx`, `app/{layout,error,not-found,opengraph-image,twitter-image}.tsx`, `app/news/[idSlug]/` (with `share-card/route.ts`), `app/person/[idSlug]/`
+- pages: `app/(home)/{page,loading}.tsx`, `app/{layout,error,not-found,opengraph-image,twitter-image}.tsx`, `app/news/[idSlug]/` (with `share-card/route.ts`), `app/person/[idSlug]/`, `app/section/[slug]/` (`page.tsx`, `[page]/page.tsx`, `share-card/route.ts`, `section-shared.tsx`)
 - revalidation: `app/api/revalidate/route.ts`
 - data and SEO: `lib/{data,env,cache-tags,seo,site,routes,article-html}.ts`, `lib/share-card.tsx`
-- components: `components/{article-body,embed-activator,json-ld,related-articles,skeleton,empty-state,section-heading}.tsx`, `components/home/`
+- components: `components/{article-body,embed-activator,json-ld,related-articles,section-articles,skeleton,empty-state,section-heading}.tsx`, `components/home/`
 - font: `assets/fonts/`
 
 **API:**
@@ -230,4 +250,4 @@ Then publish or edit something in the admin. The web log prints `Revalidated cac
 - `apps/api/src/modules/legislation/public.{routes,service}.ts` (`/parliament/week`)
 
 ---
-Last updated: 2026-10-08 — article page: related rail with skeleton, per-article share card, `fb:app_id` (`FACEBOOK_APP_ID`), inline publisher and `BreadcrumbList` JSON-LD. Earlier: initial version (homepage, article and person pages, tag revalidation, SEO, JSON-LD, share card).
+Last updated: 2026-10-08 — section pages (`/section/{slug}[/{n}]`, CollectionPage JSON-LD, section share card, `category:{slug}` tag) linked from article categories and homepage sections. Earlier the same day — article page: related rail with skeleton, per-article share card, `fb:app_id` (`FACEBOOK_APP_ID`), inline publisher and `BreadcrumbList` JSON-LD. Earlier: initial version (homepage, article and person pages, tag revalidation, SEO, JSON-LD, share card).

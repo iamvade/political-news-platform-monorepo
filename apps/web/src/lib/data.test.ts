@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { articleSummary } from '@/test/fixtures';
-import { duringBuildOr, getArticle, getHomepage, getLatestArticles, getPerson, getRelatedArticles } from './data';
+import { duringBuildOr, getArticle, getCategory, getCategoryArticles, getHomepage, getLatestArticles, getPerson, getRelatedArticles } from './data';
 import { resetServerEnv } from './env';
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -73,6 +73,27 @@ describe('data layer', () => {
 
     expect(related.map((a) => a.id)).toEqual([50, 49]);
     expect(String(fetchMock.mock.calls[0]![0])).toBe('http://api.test/v1/public/articles?pageSize=3');
+  });
+
+  it('category: tagged category:{slug}, kept an hour, 404 becomes not-found', async () => {
+    fetchMock.mockImplementation(async () => json({ data: { slug: 'uls-tor', nameMn: 'Улс төр', nameEn: null } }));
+
+    await expect(getCategory('uls-tor')).resolves.toEqual({ slug: 'uls-tor', nameMn: 'Улс төр', nameEn: null });
+    expect(String(fetchMock.mock.calls[0]![0])).toBe('http://api.test/v1/public/categories/uls-tor');
+    expect(lastInit()).toMatchObject({ cache: 'force-cache', next: { tags: ['category:uls-tor'], revalidate: 3600 } });
+
+    fetchMock.mockImplementation(async () => json({ error: { code: 'NOT_FOUND', message: 'x' } }, 404));
+    await expect(getCategory('nope')).rejects.toThrow('NEXT_NOT_FOUND');
+  });
+
+  it('category articles: one page, tagged with the category and "articles"', async () => {
+    fetchMock.mockImplementation(async () => json({ data: [articleSummary()], pagination: { page: 2, pageSize: 20, total: 21, totalPages: 2 } }));
+
+    const result = await getCategoryArticles('uls-tor', 2);
+
+    expect(result.pagination).toEqual({ page: 2, pageSize: 20, total: 21, totalPages: 2 });
+    expect(String(fetchMock.mock.calls[0]![0])).toBe('http://api.test/v1/public/categories/uls-tor/articles?page=2&pageSize=20');
+    expect(lastInit()).toMatchObject({ next: { tags: ['category:uls-tor', 'articles'], revalidate: 300 } });
   });
 
   it('tags a person with person:{id} and people', async () => {

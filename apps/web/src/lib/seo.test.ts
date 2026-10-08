@@ -1,7 +1,7 @@
 import type { PublicArticle, PublicPerson } from '@news/shared/schemas';
 import { describe, expect, it } from 'vitest';
 import { articleSummary, cover } from '@/test/fixtures';
-import { articleMetadata, articleShareImage, breadcrumbJsonLd, newsArticleJsonLd, organizationJsonLd, personJsonLd, personMetadata, plainText, serializeJsonLd, shareImage, type SiteInfo } from './seo';
+import { articleMetadata, articleShareImage, breadcrumbJsonLd, categoryShareImage, collectionPageJsonLd, newsArticleJsonLd, organizationJsonLd, personJsonLd, personMetadata, plainText, sectionMetadata, serializeJsonLd, shareImage, type SiteInfo } from './seo';
 
 const site: SiteInfo = { url: 'https://news.example.mn', name: 'Улс төрийн мэдээ', description: 'Тайлбар' };
 
@@ -69,6 +69,25 @@ describe('metadata', () => {
     expect(url(article)).not.toBe(url({ ...article, category: null }));
   });
 
+  it('section: every page canonical to itself, website type, the versioned category card', () => {
+    const category = { slug: 'uls-tor', nameMn: 'Улс төр' };
+    const first = sectionMetadata(category, { page: 1, title: 'Улс төр', description: 'Тайлбар' }, site);
+    const third = sectionMetadata(category, { page: 3, title: 'Улс төр — 3-р хуудас', description: 'Тайлбар' }, site);
+
+    expect(first.alternates?.canonical).toBe('https://news.example.mn/section/uls-tor');
+    expect(third.alternates?.canonical).toBe('https://news.example.mn/section/uls-tor/3');
+    expect(third.title).toBe('Улс төр — 3-р хуудас');
+    const image = categoryShareImage(category, site);
+    expect(image.url).toMatch(/^https:\/\/news\.example\.mn\/section\/uls-tor\/share-card\?v=[0-9a-f]{12}$/);
+    expect(first.openGraph).toMatchObject({ type: 'website', url: 'https://news.example.mn/section/uls-tor', locale: 'mn_MN', images: [image] });
+    expect(first.twitter).toMatchObject({ card: 'summary_large_image', images: [image.url] });
+  });
+
+  it('the category card URL changes with the name only', () => {
+    expect(categoryShareImage({ slug: 'uls-tor', nameMn: 'Улс төр' }, site).url).toBe(categoryShareImage({ slug: 'uls-tor', nameMn: 'Улс төр' }, site).url);
+    expect(categoryShareImage({ slug: 'uls-tor', nameMn: 'Улс төр' }, site).url).not.toBe(categoryShareImage({ slug: 'uls-tor', nameMn: 'Улс төрийн' }, site).url);
+  });
+
   it('person: profile type, role and party in the description', () => {
     const meta = personMetadata(person, site);
     expect(meta.description).toBe('УИХ-ын гишүүн, МАН');
@@ -115,6 +134,28 @@ describe('JSON-LD', () => {
         { '@type': 'ListItem', position: 1, name: 'Нүүр', item: 'https://news.example.mn/' },
         { '@type': 'ListItem', position: 2, name: article.title, item: 'https://news.example.mn/news/42-ikh-khural-tosviig-batlav' },
       ],
+    });
+  });
+
+  it('CollectionPage lists the page\'s articles with positions continuing from earlier pages', () => {
+    const ld = collectionPageJsonLd(
+      site,
+      { path: '/section/uls-tor/2', name: 'Улс төр — 2-р хуудас', description: 'Тайлбар' },
+      [articleSummary({ id: 7, slug: 'a', title: 'А' }), articleSummary({ id: 6, slug: 'b', title: 'Б' })],
+      20,
+    );
+    expect(ld).toMatchObject({
+      '@type': 'CollectionPage',
+      url: 'https://news.example.mn/section/uls-tor/2',
+      isPartOf: { '@id': 'https://news.example.mn/#website' },
+      publisher: { '@type': 'NewsMediaOrganization', name: 'Улс төрийн мэдээ' },
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 21, url: 'https://news.example.mn/news/7-a', name: 'А' },
+          { '@type': 'ListItem', position: 22, url: 'https://news.example.mn/news/6-b', name: 'Б' },
+        ],
+      },
     });
   });
 

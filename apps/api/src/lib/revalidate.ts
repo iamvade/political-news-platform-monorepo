@@ -14,6 +14,8 @@ export const cacheTags = {
   parliament: 'parliament',
   article: (id: number) => `article:${id}`,
   person: (id: number) => `person:${id}`,
+  /** A section page (category name). Reserved: categories are seed-only; send it from category CRUD when that exists. */
+  category: (slug: string) => `category:${slug}`,
 } as const;
 
 /** A person's page, or every person page when the record has no person (e.g. a party's promise). */

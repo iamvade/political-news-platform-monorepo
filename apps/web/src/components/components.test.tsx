@@ -9,6 +9,7 @@ import { Pagination } from './pagination';
 import { PartyBadge } from './party-badge';
 import { PersonCard } from './person-card';
 import { RelatedArticles, RelatedArticlesSkeleton } from './related-articles';
+import { SectionArticles, SectionArticlesSkeleton, SectionHeader } from './section-articles';
 import { SourceLink, sourceHost } from './source-link';
 import { Tag } from './tag';
 
@@ -181,5 +182,51 @@ describe('RelatedArticles', () => {
     const section = screen.getByRole('region', { name: 'Холбоотой мэдээ' });
     expect(section).toHaveAttribute('aria-busy', 'true');
     expect(within(section).queryAllByRole('link')).toHaveLength(0);
+  });
+});
+
+describe('Section page', () => {
+  const category = { slug: 'uls-tor', nameMn: 'Улс төр' };
+  const page = (count: number, firstId = 100) => Array.from({ length: count }, (_, i) => articleSummary({ id: firstId - i, slug: `a${firstId - i}`, title: `Мэдээ ${firstId - i}` }));
+
+  it('page 1: lead card first, every headline a level-2 heading, pagination to /section/{slug}/2', () => {
+    renderWithIntl(<SectionArticles category={category} articles={page(20)} page={1} totalPages={3} />);
+
+    expect(screen.getAllByRole('article')).toHaveLength(20);
+    expect(screen.getAllByRole('article')[0]).toHaveAttribute('data-size', 'lead');
+    expect(screen.getAllByRole('article')[0]).toContainElement(screen.getByRole('link', { name: 'Мэдээ 100' }));
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(20);
+    expect(document.querySelectorAll('img[fetchpriority="high"]')).toHaveLength(1);
+    const nav = screen.getByRole('navigation', { name: 'Хуудаслалт' });
+    expect(within(nav).getByRole('link', { name: 'Дараах' })).toHaveAttribute('href', '/section/uls-tor/2');
+  });
+
+  it('page 2: no lead, the first card loads its image first, page 1 has no number in its URL', () => {
+    renderWithIntl(<SectionArticles category={category} articles={page(20, 80)} page={2} totalPages={3} />);
+
+    expect(screen.getAllByRole('article')[0]).not.toHaveAttribute('data-size', 'lead');
+    expect(document.querySelectorAll('[data-size="lead"]')).toHaveLength(0);
+    expect(document.querySelectorAll('img[fetchpriority="high"]')).toHaveLength(1);
+    expect(within(screen.getByRole('navigation', { name: 'Хуудаслалт' })).getByRole('link', { name: 'Өмнөх' })).toHaveAttribute('href', '/section/uls-tor');
+  });
+
+  it('an empty section shows a calm message with a way home, and no pagination', () => {
+    renderWithIntl(<SectionArticles category={category} articles={[]} page={1} totalPages={0} />);
+    expect(screen.getByText('Энэ ангилалд мэдээ хараахан нийтлэгдээгүй байна.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Нүүр хуудас руу' })).toHaveAttribute('href', '/');
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
+
+  it('header: page number as the last crumb from page 2 on', () => {
+    renderWithIntl(<SectionHeader category={category} page={2} />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Улс төр' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Улс төр' })).toHaveAttribute('href', '/section/uls-tor');
+    expect(screen.getByText('2-р хуудас')).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('skeleton is marked busy and has no links', () => {
+    const { container } = renderWithIntl(<SectionArticlesSkeleton />);
+    expect(container.firstChild).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
   });
 });

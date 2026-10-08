@@ -59,6 +59,13 @@
       "hint": "Дарсны дараа гадны сайтын контент ачаална."
     }
   },
+  "section": {
+    "breadcrumbHome": "Нүүр",
+    "description": "{category}: улс төрийн сүүлийн үеийн мэдээ, нийтлэл.",
+    "pageTitle": "{category} — {page}-р хуудас",
+    "empty": "Энэ ангилалд мэдээ хараахан нийтлэгдээгүй байна.",
+    "home": "Нүүр хуудас руу"
+  },
   "breadcrumbs": {
     "label": "Таны байршил"
   },
@@ -117,7 +124,10 @@
       "related": "Холбоотой мэдээ (RelatedArticles)",
       "relatedLoading": "Ачаалж буй үед (RelatedArticlesSkeleton)",
       "inlineSource": "SourceLink — текстэн",
-      "iconSource": "SourceLink — дүрс"
+      "iconSource": "SourceLink — дүрс",
+      "section": "Ангиллын хуудас (SectionArticles)",
+      "sectionEmpty": "Мэдээгүй ангилал",
+      "sectionLoading": "Ачаалж буй үед (SectionArticlesSkeleton)"
     },
     "sampleFact": "2024 оны хөрөнгийн мэдүүлэг: 1.2 тэрбум төгрөг"
   },
@@ -126,7 +136,9 @@
     "latest": "Шинэ мэдээ",
     "latestEmpty": "Шинэ мэдээ алга.",
     "empty": "Мэдээ хараахан нийтлэгдээгүй байна.",
-    "unavailable": "Мэдээг түр ачаалж чадсангүй. Хэсэг хугацааны дараа дахин орно уу."
+    "unavailable": "Мэдээг түр ачаалж чадсангүй. Хэсэг хугацааны дараа дахин орно уу.",
+    "seeAll": "Бүгдийг үзэх",
+    "seeAllLabel": "{category}: бүх мэдээ"
   },
   "person": {
     "breadcrumbHome": "Нүүр",
